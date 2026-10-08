@@ -125,7 +125,7 @@
         <h3 class="font-bold text-slate-800 font-heading text-base flex items-center gap-2">
           <i class="fa-solid fa-graduation-cap text-indigo-600"></i> Kind-Profil (Schule vs. Kindergarten)
         </h3>
-        <p class="text-xs text-slate-500">Wenn du hier auf Schulkind umschaltest, werden Schulaufgaben (Ranzen packen & Hausaufgaben) sofort für das Kind aktiviert – ohne Punkteverlust!</p>
+        <p class="text-xs text-slate-500">Wenn du hier auf Schulkind umschaltest, werden Schulaufgaben sofort für das Kind aktiviert – ohne Punkteverlust!</p>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between">
@@ -395,7 +395,7 @@
       lastResetDate: '',
       tasks: [],
       rewards: [...defaultRewards],
-      oskar: { stars: 0, completedTasks: [], profileType: 'school' }, // Korrigiert auf 0 Startsterne!
+      oskar: { stars: 0, completedTasks: [], profileType: 'school' },
       irma: { stars: 0, completedTasks: [], profileType: 'kindergarten' },
       activeTimers: {
         oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
@@ -429,7 +429,6 @@
       return tasks;
     }
 
-    // Live-Synchronisation aus der Cloud
     onValue(ref(dbRef, 'appState'), (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -584,12 +583,6 @@
 
           return `
             <div class="bg-white rounded-3xl p-5 shadow-sm border-2 transition-all relative overflow-hidden flex flex-col justify-between ${isTimerActive ? 'border-amber-400 active-card-pulse' : (isCompleted ? 'border-green-300 bg-green-50/30' : 'border-slate-100')}">
-              ${isTimerActive ? `
-                <div class="absolute top-0 left-0 h-2 bg-slate-100 w-full">
-                  <div class="${barColor} h-full transition-all duration-300" style="width: ${remainingPercent}%"></div>
-                </div>
-              ` : ''}
-
               <div class="flex items-start justify-between space-x-3 mb-4">
                 <div class="flex items-center space-x-3">
                   <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-2xl">
@@ -620,7 +613,7 @@
 
               <div>
                 ${isTimerActive ? `
-                  <div class="space-y-2">
+                  <div class="space-y-3">
                     <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
                       <div class="${barColor} h-full transition-all duration-300" style="width: ${remainingPercent}%"></div>
                     </div>
@@ -673,12 +666,6 @@
 
           return `
             <div class="bg-white rounded-3xl p-5 shadow-sm border-2 relative overflow-hidden flex flex-col justify-between ${isTimerActive ? 'border-amber-400 active-card-pulse' : 'border-slate-100'}">
-              ${isTimerActive ? `
-                <div class="absolute top-0 left-0 h-2 bg-slate-100 w-full">
-                  <div class="${barColor} h-full transition-all duration-300" style="width: ${remainingPercent}%"></div>
-                </div>
-              ` : ''}
-
               <div class="flex items-start justify-between space-x-3 mb-4">
                 <div class="flex items-center space-x-3">
                   <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-2xl">
@@ -702,7 +689,7 @@
 
               <div>
                 ${isTimerActive ? `
-                  <div class="space-y-2">
+                  <div class="space-y-3">
                     <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
                       <div class="${barColor} h-full transition-all duration-300" style="width: ${remainingPercent}%"></div>
                     </div>
@@ -1029,7 +1016,7 @@
       modalTimerChild = null;
     };
 
-    window.handleTimerBackdropClick = function(event) {
+    window.handleTimerBackdropClientClick = function(event) {
       if (event.target.id === 'timer-modal') {
         minimizeTimer();
       }
