@@ -519,11 +519,18 @@
                   </div>
                 </div>
 
-                ${isParentUnlocked ? `
-                  <button onclick="deleteItem('task', '${task.id}')" class="text-slate-300 hover:text-red-500 p-1 text-sm transition">
-                    <i class="fa-solid fa-trash-can"></i>
-                  </button>
-                ` : ''}
+                <div class="flex items-center space-x-1">
+                  ${isParentUnlocked && isCompleted ? `
+                    <button onclick="parentUnlockTask('${activeChild}', '${task.id}')" class="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-amber-300" title="Aufgabe für heute entsperren & Punkte abziehen">
+                      <i class="fa-solid fa-unlock"></i> Entsperren
+                    </button>
+                  ` : ''}
+                  ${isParentUnlocked ? `
+                    <button onclick="deleteItem('task', '${task.id}')" class="text-slate-300 hover:text-red-500 p-1 text-sm transition" title="Löschen">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                  ` : ''}
+                </div>
               </div>
 
               <div>
@@ -545,10 +552,10 @@
                     </div>
                   </div>
                 ` : (isCompleted ? `
-                  <button onclick="toggleTask('${task.id}')" class="w-full py-3 bg-green-500 text-white font-bold font-heading rounded-2xl shadow-sm flex items-center justify-center space-x-2">
+                  <div class="w-full py-3 bg-green-100 text-green-700 font-bold font-heading rounded-2xl flex items-center justify-center space-x-2 border border-green-200">
                     <i class="fa-solid fa-check"></i>
-                    <span>Erledigt!</span>
-                  </button>
+                    <span>Erledigt für heute!</span>
+                  </div>
                 ` : (task.minutes ? `
                   <button onclick="startTimer('${activeChild}',${task.minutes}, '${task.title}', '${task.icon}', '${task.id}',${canAllowEarly})" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold font-heading rounded-2xl shadow-sm transition">
                     Starten (${task.minutes} Min)
@@ -698,18 +705,34 @@
       const task = dbData.tasks.find(t => t.id === id);
       if (task && childData) {
         if (!Array.isArray(childData.completedTasks)) childData.completedTasks = [];
-        const index = childData.completedTasks.indexOf(id);
-        if (index === -1) {
+        // Einmal-pro-Tag-Sperre: Wenn bereits erledigt, im Kindermodus nicht rückgängig machen!
+        if (!childData.completedTasks.includes(id)) {
           childData.completedTasks.push(id);
           childData.stars = (childData.stars || 0) + task.stars;
           playSound('success');
           confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
           if (activeTimers[activeChild].itemId === id) cancelTimer(activeChild);
-        } else {
-          childData.completedTasks.splice(index, 1);
-          childData.stars = Math.max(0, (childData.stars || 0) - task.stars);
+          saveStateToFirebase();
         }
-        saveStateToFirebase();
+      }
+    };
+
+    // Spezieller Eltern-Unlock für einzelne Aufgaben mit Sternen-Korrektur
+    window.parentUnlockTask = function(child, taskId) {
+      if (!isParentUnlocked) return;
+      const childData = dbData[child];
+      const task = dbData.tasks.find(t => t.id === taskId);
+
+      if (childData && task) {
+        if (!Array.isArray(childData.completedTasks)) childData.completedTasks = [];
+        const index = childData.completedTasks.indexOf(taskId);
+        if (index !== -1) {
+          childData.completedTasks.splice(index, 1);
+          // Sterne fair abziehen (minimal 0)
+          childData.stars = Math.max(0, (childData.stars || 0) - task.stars);
+          saveStateToFirebase();
+          render();
+        }
       }
     };
 
@@ -730,6 +753,11 @@
     };
 
     window.startTimer = function(child, minutes, title, icon, itemId = null, allowEarly = false) {
+      const childData = dbData[child];
+      if (itemId && childData && (childData.completedTasks || []).includes(itemId)) {
+        return; // Bereits für heute erledigt -> Nicht erneut starten!
+      }
+
       const t = activeTimers[child];
       t.totalSeconds = minutes * 60;
       t.targetEndTime = Date.now() + (t.totalSeconds * 1000);
