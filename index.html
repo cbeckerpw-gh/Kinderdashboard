@@ -350,9 +350,10 @@
       irma: { stars: 0, completedTasks: [] }
     };
 
+    // Zeitstempel-basierter Timer-Zustand (verhindert Einfrieren beim Tab-Wechsel)
     let activeTimers = {
-      oskar: { interval: null, totalSeconds: 0, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
-      irma: { interval: null, totalSeconds: 0, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
+      oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
+      irma: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
     };
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -360,6 +361,13 @@
       checkDailyReset();
       render();
       setInterval(updateTimersTick, 1000);
+    });
+
+    // Sofortiger Re-Sync beim Wiederöffnen des Tabs / Entsperren des Displays
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        updateTimersTick();
+      }
     });
 
     function saveState() {
@@ -504,7 +512,6 @@
               <div>
                 ${isTimerActive ? `
                   <div class="space-y-2">
-                    <!-- Visueller Ladebalken direkt auf der Karte -->
                     <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
                       <div class="${barColor} h-full transition-all duration-300" style="width: ${remainingPercent}%"></div>
                     </div>
@@ -706,9 +713,11 @@
       }
     }
 
+    // Zeitstempel-basierter Timer-Start
     function startTimer(child, minutes, title, icon, itemId = null, allowEarly = false) {
       const t = activeTimers[child];
       t.totalSeconds = minutes * 60;
+      t.targetEndTime = Date.now() + (t.totalSeconds * 1000);
       t.remainingSeconds = t.totalSeconds;
       t.title = title;
       t.icon = icon || '⏱️';
@@ -720,19 +729,27 @@
       render();
     }
 
+    // Präzise Berechnung über den echten Ziel-Zeitstempel
     function updateTimersTick() {
       let needsRender = false;
+      const now = Date.now();
+
       ['oskar', 'irma'].forEach(ch => {
         const t = activeTimers[ch];
-        if (t.remainingSeconds > 0 && !t.isPaused) {
-          t.remainingSeconds--;
-          needsRender = true;
+        if (t.targetEndTime && !t.isPaused) {
+          const calcRemaining = Math.max(0, Math.round((t.targetEndTime - now) / 1000));
+          
+          if (t.remainingSeconds !== calcRemaining) {
+            t.remainingSeconds = calcRemaining;
+            needsRender = true;
+          }
 
           if (modalTimerChild === ch) {
             updateModalTimerDisplay(ch);
           }
 
           if (t.remainingSeconds <= 0) {
+            t.targetEndTime = null;
             playSound('complete');
             confetti({ particleCount: 120, spread: 100 });
             
@@ -846,6 +863,11 @@
       if (modalTimerChild) {
         const t = activeTimers[modalTimerChild];
         t.isPaused = !t.isPaused;
+        if (t.isPaused) {
+          t.targetEndTime = null;
+        } else {
+          t.targetEndTime = Date.now() + (t.remainingSeconds * 1000);
+        }
         updateModalTimerDisplay(modalTimerChild);
       }
     }
@@ -857,6 +879,7 @@
     function cancelTimer(child) {
       const t = activeTimers[child];
       t.remainingSeconds = 0;
+      t.targetEndTime = null;
       t.itemId = null;
       if (modalTimerChild === child) {
         document.getElementById('timer-modal').classList.add('hidden');
