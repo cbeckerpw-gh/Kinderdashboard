@@ -316,11 +316,28 @@
   <!-- Parallele Floating Widgets für Oskar & Irma -->
   <div id="floating-timers-container" class="fixed bottom-4 right-4 flex flex-col gap-3 z-40 max-w-xs w-full pointer-events-none px-4 sm:px-0"></div>
 
-  <script>
+  <!-- FIREBASE INTEGRATION VIA ES MODULES -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
     const PARENT_PIN = "1234";
     let isParentUnlocked = false;
     let activeChild = 'oskar';
     let modalTimerChild = null;
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBKk4OuNeLd1kCademvgdX8ZelWHvHq_n8",
+      authDomain: "sterne-held-app.firebaseapp.com",
+      databaseURL: "https://sterne-held-app-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "sterne-held-app",
+      storageBucket: "sterne-held-app.firebasestorage.app",
+      messagingSenderId: "998429101554",
+      appId: "1:998429101554:web:e190b1f3fd68e17f06af6b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const dbRef = getDatabase(app);
 
     const defaultTasks = [
       { id: '1', child: 'both', title: 'Zähne putzen', category: 'morgen', stars: 1, minutes: 3, icon: '🦷', allowEarly: false },
@@ -342,7 +359,7 @@
 
     let currentTab = 'morgen';
 
-    let db = {
+    let dbData = {
       lastResetDate: '',
       tasks: [...defaultTasks],
       rewards: [...defaultRewards],
@@ -350,64 +367,55 @@
       irma: { stars: 0, completedTasks: [] }
     };
 
-    // Zeitstempel-basierter Timer-Zustand (verhindert Einfrieren beim Tab-Wechsel)
     let activeTimers = {
       oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
       irma: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
     };
 
+    // Live-Synchronisation aus der Cloud
+    onValue(ref(dbRef, 'appState'), (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        dbData = data;
+        if (!dbData.oskar) dbData.oskar = { stars: 0, completedTasks: [] };
+        if (!dbData.irma) dbData.irma = { stars: 0, completedTasks: [] };
+        if (!Array.isArray(dbData.tasks)) dbData.tasks = [];
+        if (!Array.isArray(dbData.rewards)) dbData.rewards = [];
+        checkDailyReset();
+        render();
+      } else {
+        saveStateToFirebase();
+      }
+    });
+
+    function saveStateToFirebase() {
+      set(ref(dbRef, 'appState'), dbData);
+    }
+
+    function checkDailyReset() {
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (dbData.lastResetDate !== todayStr) {
+        if (!dbData.oskar) dbData.oskar = { stars: 0, completedTasks: [] };
+        if (!dbData.irma) dbData.irma = { stars: 0, completedTasks: [] };
+        dbData.oskar.completedTasks = [];
+        dbData.irma.completedTasks = [];
+        dbData.lastResetDate = todayStr;
+        saveStateToFirebase();
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
-      loadState();
-      checkDailyReset();
       render();
       setInterval(updateTimersTick, 1000);
     });
 
-    // Sofortiger Re-Sync beim Wiederöffnen des Tabs / Entsperren des Displays
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
         updateTimersTick();
       }
     });
 
-    function saveState() {
-      localStorage.setItem('sterne_held_v3_multi_state', JSON.stringify(db));
-    }
-
-    function loadState() {
-      const saved = localStorage.getItem('sterne_held_v3_multi_state');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed && parsed.oskar && parsed.irma && Array.isArray(parsed.tasks)) {
-            db = parsed;
-          } else {
-            db = {
-              lastResetDate: '',
-              tasks: [...defaultTasks],
-              rewards: [...defaultRewards],
-              oskar: { stars: 0, completedTasks: [] },
-              irma: { stars: 0, completedTasks: [] }
-            };
-          }
-        } catch (e) {
-          db.tasks = [...defaultTasks];
-          db.rewards = [...defaultRewards];
-        }
-      }
-    }
-
-    function checkDailyReset() {
-      const todayStr = new Date().toISOString().split('T')[0];
-      if (db.lastResetDate !== todayStr) {
-        if (db.oskar) db.oskar.completedTasks = [];
-        if (db.irma) db.irma.completedTasks = [];
-        db.lastResetDate = todayStr;
-        saveState();
-      }
-    }
-
-    function switchChild(child) {
+    window.switchChild = function(child) {
       activeChild = child;
       document.getElementById('child-btn-oskar').className = child === 'oskar' 
         ? "px-4 py-2 rounded-xl font-bold font-heading text-sm transition flex items-center space-x-2 bg-indigo-600 text-white shadow-sm"
@@ -418,7 +426,7 @@
         : "px-4 py-2 rounded-xl font-bold font-heading text-sm transition flex items-center space-x-2 text-slate-600 hover:bg-slate-200";
 
       render();
-    }
+    };
 
     function playSound(type) {
       try {
@@ -447,8 +455,8 @@
     }
 
     function render() {
-      const childData = db[activeChild] || { stars: 0, completedTasks: [] };
-      document.getElementById('star-count').innerText = childData.stars;
+      const childData = dbData[activeChild] || { stars: 0, completedTasks: [] };
+      document.getElementById('star-count').innerText = childData.stars || 0;
 
       const taskList = document.getElementById('task-list');
       const rewardList = document.getElementById('reward-list');
@@ -464,7 +472,7 @@
       };
 
       if (['morgen', 'tag', 'abend'].includes(currentTab)) {
-        const filteredTasks = (db.tasks || []).filter(t => (t.child === 'both' || t.child === activeChild) && t.category === currentTab);
+        const filteredTasks = (dbData.tasks || []).filter(t => (t.child === 'both' || t.child === activeChild) && t.category === currentTab);
         
         taskList.innerHTML = filteredTasks.length ? filteredTasks.map(task => {
           const isCompleted = (childData.completedTasks || []).includes(task.id);
@@ -548,7 +556,7 @@
       }
 
       if (currentTab === 'belohnungen') {
-        const filteredRewards = (db.rewards || []).filter(r => r.child === 'both' || r.child === activeChild);
+        const filteredRewards = (dbData.rewards || []).filter(r => r.child === 'both' || r.child === activeChild);
         
         rewardList.innerHTML = filteredRewards.map(reward => {
           const canAfford = childData.stars >= reward.cost;
@@ -656,7 +664,7 @@
       });
     }
 
-    function switchTab(tab) {
+    window.switchTab = function(tab) {
       if (tab === 'parent' && !isParentUnlocked) {
         openParentModal();
         return;
@@ -674,47 +682,44 @@
         }
       });
       render();
-    }
+    };
 
-    function toggleTask(id) {
-      const childData = db[activeChild];
-      const task = db.tasks.find(t => t.id === id);
-      if (task) {
+    window.toggleTask = function(id) {
+      const childData = dbData[activeChild];
+      const task = dbData.tasks.find(t => t.id === id);
+      if (task && childData) {
+        if (!Array.isArray(childData.completedTasks)) childData.completedTasks = [];
         const index = childData.completedTasks.indexOf(id);
         if (index === -1) {
           childData.completedTasks.push(id);
-          childData.stars += task.stars;
+          childData.stars = (childData.stars || 0) + task.stars;
           playSound('success');
           confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
           if (activeTimers[activeChild].itemId === id) cancelTimer(activeChild);
         } else {
           childData.completedTasks.splice(index, 1);
-          childData.stars = Math.max(0, childData.stars - task.stars);
+          childData.stars = Math.max(0, (childData.stars || 0) - task.stars);
         }
-        saveState();
-        render();
+        saveStateToFirebase();
       }
-    }
+    };
 
-    function claimReward(id) {
-      const childData = db[activeChild];
-      const reward = db.rewards.find(r => r.id === id);
-      if (reward && childData.stars >= reward.cost) {
+    window.claimReward = function(id) {
+      const childData = dbData[activeChild];
+      const reward = dbData.rewards.find(r => r.id === id);
+      if (reward && childData && childData.stars >= reward.cost) {
         childData.stars -= reward.cost;
-        saveState();
+        saveStateToFirebase();
         playSound('complete');
         confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
 
         if (reward.minutes && reward.minutes > 0) {
           startTimer(activeChild, reward.minutes, reward.title, reward.icon, reward.id, false);
-        } else {
-          render();
         }
       }
-    }
+    };
 
-    // Zeitstempel-basierter Timer-Start
-    function startTimer(child, minutes, title, icon, itemId = null, allowEarly = false) {
+    window.startTimer = function(child, minutes, title, icon, itemId = null, allowEarly = false) {
       const t = activeTimers[child];
       t.totalSeconds = minutes * 60;
       t.targetEndTime = Date.now() + (t.totalSeconds * 1000);
@@ -727,9 +732,8 @@
 
       openTimerForChild(child);
       render();
-    }
+    };
 
-    // Präzise Berechnung über den echten Ziel-Zeitstempel
     function updateTimersTick() {
       let needsRender = false;
       const now = Date.now();
@@ -754,12 +758,15 @@
             confetti({ particleCount: 120, spread: 100 });
             
             if (t.itemId) {
-              const childData = db[ch];
-              const task = db.tasks.find(tk => tk.id === t.itemId);
-              if (task && !childData.completedTasks.includes(t.itemId)) {
-                childData.completedTasks.push(t.itemId);
-                childData.stars += task.stars;
-                saveState();
+              const childData = dbData[ch];
+              const task = dbData.tasks.find(tk => tk.id === t.itemId);
+              if (task && childData) {
+                if (!Array.isArray(childData.completedTasks)) childData.completedTasks = [];
+                if (!childData.completedTasks.includes(t.itemId)) {
+                  childData.completedTasks.push(t.itemId);
+                  childData.stars = (childData.stars || 0) + task.stars;
+                  saveStateToFirebase();
+                }
               }
             }
             if (modalTimerChild === ch) {
@@ -772,7 +779,7 @@
       if (needsRender) render();
     }
 
-    function openTimerForChild(child) {
+    window.openTimerForChild = function(child) {
       modalTimerChild = child;
       const t = activeTimers[child];
 
@@ -791,7 +798,7 @@
       document.getElementById('timer-modal').classList.remove('hidden');
 
       updateModalTimerDisplay(child);
-    }
+    };
 
     function updateModalTimerDisplay(child) {
       const t = activeTimers[child];
@@ -807,14 +814,15 @@
       circle.style.strokeDashoffset = offset;
     }
 
-    function completeTimerEarly(child = modalTimerChild) {
+    window.completeTimerEarly = function(child = modalTimerChild) {
       const t = activeTimers[child];
       if (!t.itemId) return;
 
-      const childData = db[child];
-      const task = db.tasks.find(tk => tk.id === t.itemId);
+      const childData = dbData[child];
+      const task = dbData.tasks.find(tk => tk.id === t.itemId);
 
-      if (task) {
+      if (task && childData) {
+        if (!Array.isArray(childData.completedTasks)) childData.completedTasks = [];
         if (!childData.completedTasks.includes(t.itemId)) {
           childData.completedTasks.push(t.itemId);
         }
@@ -822,8 +830,8 @@
         const isSuperFast = t.remainingSeconds >= (t.totalSeconds / 2);
         const earnedStars = task.stars + (isSuperFast ? 1 : 0);
 
-        childData.stars += earnedStars;
-        saveState();
+        childData.stars = (childData.stars || 0) + earnedStars;
+        saveStateToFirebase();
         playSound('success');
 
         confetti({ particleCount: isSuperFast ? 130 : 80, spread: 90, origin: { y: 0.5 } });
@@ -836,7 +844,7 @@
       } else {
         cancelTimer(child);
       }
-    }
+    };
 
     function showSuccessScreen(earnedStars, isSuperFast) {
       document.getElementById('timer-running-view').classList.add('hidden');
@@ -853,13 +861,13 @@
       }
     }
 
-    function closeSuccessScreen() {
+    window.closeSuccessScreen = function() {
       document.getElementById('timer-success-view').classList.add('hidden');
       document.getElementById('timer-running-view').classList.remove('hidden');
       if (modalTimerChild) cancelTimer(modalTimerChild);
-    }
+    };
 
-    function toggleTimerPause() {
+    window.toggleTimerPause = function() {
       if (modalTimerChild) {
         const t = activeTimers[modalTimerChild];
         t.isPaused = !t.isPaused;
@@ -870,11 +878,11 @@
         }
         updateModalTimerDisplay(modalTimerChild);
       }
-    }
+    };
 
-    function cancelCurrentTimer() {
+    window.cancelCurrentTimer = function() {
       if (modalTimerChild) cancelTimer(modalTimerChild);
-    }
+    };
 
     function cancelTimer(child) {
       const t = activeTimers[child];
@@ -888,18 +896,18 @@
       render();
     }
 
-    function minimizeTimer() {
+    window.minimizeTimer = function() {
       document.getElementById('timer-modal').classList.add('hidden');
       modalTimerChild = null;
-    }
+    };
 
-    function handleTimerBackdropClick(event) {
+    window.handleTimerBackdropClick = function(event) {
       if (event.target.id === 'timer-modal') {
         minimizeTimer();
       }
-    }
+    };
 
-    function handleParentButtonClick() {
+    window.handleParentButtonClick = function() {
       if (isParentUnlocked) {
         if (currentTab === 'parent') {
           switchTab('morgen');
@@ -909,18 +917,18 @@
       } else {
         openParentModal();
       }
-    }
+    };
 
     function openParentModal() {
       document.getElementById('pin-input').value = '';
       document.getElementById('pin-modal').classList.remove('hidden');
     }
 
-    function closePinModal() {
+    window.closePinModal = function() {
       document.getElementById('pin-modal').classList.add('hidden');
-    }
+    };
 
-    function verifyPin() {
+    window.verifyPin = function() {
       const input = document.getElementById('pin-input').value;
       if (input === PARENT_PIN) {
         isParentUnlocked = true;
@@ -933,24 +941,24 @@
       } else {
         alert('Falscher PIN! Versuche 1234');
       }
-    }
+    };
 
-    function lockParentMode() {
+    window.lockParentMode = function() {
       isParentUnlocked = false;
       document.getElementById('parent-lock-icon').className = "fa-solid fa-lock text-slate-400";
       document.getElementById('parent-btn-text').innerText = "Eltern";
       switchTab('morgen');
-    }
+    };
 
-    function selectIcon(emoji, target) {
+    window.selectIcon = function(emoji, target) {
       if (target === 'task') {
         document.getElementById('new-task-icon').value = emoji;
       } else {
         document.getElementById('new-reward-icon').value = emoji;
       }
-    }
+    };
 
-    function addTask() {
+    window.addTask = function() {
       const title = document.getElementById('new-task-title').value.trim();
       const child = document.getElementById('new-task-child').value;
       const category = document.getElementById('new-task-category').value;
@@ -960,7 +968,8 @@
       const allowEarly = document.getElementById('new-task-allow-early').checked;
 
       if (title) {
-        db.tasks.push({
+        if (!Array.isArray(dbData.tasks)) dbData.tasks = [];
+        dbData.tasks.push({
           id: Date.now().toString(),
           child,
           title,
@@ -971,12 +980,11 @@
           allowEarly
         });
         document.getElementById('new-task-title').value = '';
-        saveState();
-        render();
+        saveStateToFirebase();
       }
-    }
+    };
 
-    function addReward() {
+    window.addReward = function() {
       const title = document.getElementById('new-reward-title').value.trim();
       const child = document.getElementById('new-reward-child').value;
       const cost = parseInt(document.getElementById('new-reward-cost').value) || 1;
@@ -984,7 +992,8 @@
       const icon = document.getElementById('new-reward-icon').value || '🎁';
 
       if (title) {
-        db.rewards.push({
+        if (!Array.isArray(dbData.rewards)) dbData.rewards = [];
+        dbData.rewards.push({
           id: Date.now().toString(),
           child,
           title,
@@ -993,52 +1002,52 @@
           icon
         });
         document.getElementById('new-reward-title').value = '';
-        saveState();
-        render();
+        saveStateToFirebase();
       }
-    }
+    };
 
-    function deleteItem(type, id) {
+    window.deleteItem = function(type, id) {
       if (type === 'task') {
-        db.tasks = db.tasks.filter(t => t.id !== id);
+        dbData.tasks = (dbData.tasks || []).filter(t => t.id !== id);
       } else {
-        db.rewards = db.rewards.filter(r => r.id !== id);
+        dbData.rewards = (dbData.rewards || []).filter(r => r.id !== id);
       }
-      saveState();
-      render();
-    }
+      saveStateToFirebase();
+    };
 
-    function resetDailyTasks() {
-      db.oskar.completedTasks = [];
-      db.irma.completedTasks = [];
-      saveState();
-      render();
-    }
+    window.resetDailyTasks = function() {
+      if (!dbData.oskar) dbData.oskar = { stars: 0, completedTasks: [] };
+      if (!dbData.irma) dbData.irma = { stars: 0, completedTasks: [] };
+      dbData.oskar.completedTasks = [];
+      dbData.irma.completedTasks = [];
+      saveStateToFirebase();
+    };
 
-    function resetToDefaults() {
+    window.resetToDefaults = function() {
       if (confirm('Möchtest du alle Aufgaben, Belohnungen und die Punkte beider Kinder komplett auf Null zurücksetzen?')) {
-        db.tasks = [...defaultTasks];
-        db.rewards = [...defaultRewards];
-        db.oskar = { stars: 0, completedTasks: [] };
-        db.irma = { stars: 0, completedTasks: [] };
-        saveState();
-        render();
+        dbData = {
+          lastResetDate: new Date().toISOString().split('T')[0],
+          tasks: [...defaultTasks],
+          rewards: [...defaultRewards],
+          oskar: { stars: 0, completedTasks: [] },
+          irma: { stars: 0, completedTasks: [] }
+        };
+        saveStateToFirebase();
       }
-    }
+    };
 
-    function clearAllData() {
+    window.clearAllData = function() {
       if (confirm('Achtung: Möchtest du wirklich alle Daten beider Kinder löschen?')) {
-        localStorage.removeItem('sterne_held_v3_multi_state');
-        db = {
+        dbData = {
           lastResetDate: '',
           tasks: [...defaultTasks],
           rewards: [...defaultRewards],
           oskar: { stars: 0, completedTasks: [] },
           irma: { stars: 0, completedTasks: [] }
         };
-        render();
+        saveStateToFirebase();
       }
-    }
+    };
   </script>
 </body>
 </html>
