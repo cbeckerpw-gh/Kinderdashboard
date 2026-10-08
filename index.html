@@ -202,10 +202,10 @@
                 <button onclick="selectIcon('👩', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-xs font-bold">👩 Mama</button>
                 <button onclick="selectIcon('👩‍👨', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-xs font-bold">👩‍👨 Elternduo</button>
                 <button onclick="selectIcon('📺', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-xs font-bold" title="TV Zeit">📺 TV</button>
-                <button onclick="selectIcon('🧱', 'reward')" class="px-2 py-1 bg-white rounded-lg border text-base">🧱</button>
-                <button onclick="selectIcon('🍦', 'reward')" class="px-2 py-1 bg-white rounded-lg border text-base">🍦</button>
-                <button onclick="selectIcon('🛝', 'reward')" class="px-2 py-1 bg-white rounded-lg border text-base">🛝</button>
-                <button onclick="selectIcon('🎲', 'reward')" class="px-2 py-1 bg-white rounded-lg border text-base">🎲</button>
+                <button onclick="selectIcon('🧱', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base">🧱</button>
+                <button onclick="selectIcon('🍦', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base">🍦</button>
+                <button onclick="selectIcon('🛝', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base">🛝</button>
+                <button onclick="selectIcon('🎲', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base">🎲</button>
               </div>
             </div>
 
@@ -364,13 +364,14 @@
       tasks: [...defaultTasks],
       rewards: [...defaultRewards],
       oskar: { stars: 0, completedTasks: [] },
-      irma: { stars: 0, completedTasks: [] }
+      irma: { stars: 0, completedTasks: [] },
+      activeTimers: {
+        oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
+        irma: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
+      }
     };
 
-    let activeTimers = {
-      oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
-      irma: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
-    };
+    let activeTimers = dbData.activeTimers;
 
     // Live-Synchronisation aus der Cloud
     onValue(ref(dbRef, 'appState'), (snapshot) => {
@@ -381,6 +382,13 @@
         if (!dbData.irma) dbData.irma = { stars: 0, completedTasks: [] };
         if (!Array.isArray(dbData.tasks)) dbData.tasks = [];
         if (!Array.isArray(dbData.rewards)) dbData.rewards = [];
+        if (!dbData.activeTimers) {
+          dbData.activeTimers = {
+            oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
+            irma: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
+          };
+        }
+        activeTimers = dbData.activeTimers;
         checkDailyReset();
         render();
       } else {
@@ -389,6 +397,7 @@
     });
 
     function saveStateToFirebase() {
+      dbData.activeTimers = activeTimers;
       set(ref(dbRef, 'appState'), dbData);
     }
 
@@ -636,7 +645,7 @@
 
       children.forEach(ch => {
         const t = activeTimers[ch];
-        if (t.remainingSeconds > 0) {
+        if (t && t.remainingSeconds > 0) {
           const progressPercent = ((t.totalSeconds - t.remainingSeconds) / t.totalSeconds) * 100;
           const remainingPercent = 100 - progressPercent;
           
@@ -709,12 +718,13 @@
       const reward = dbData.rewards.find(r => r.id === id);
       if (reward && childData && childData.stars >= reward.cost) {
         childData.stars -= reward.cost;
-        saveStateToFirebase();
         playSound('complete');
         confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
 
         if (reward.minutes && reward.minutes > 0) {
           startTimer(activeChild, reward.minutes, reward.title, reward.icon, reward.id, false);
+        } else {
+          saveStateToFirebase();
         }
       }
     };
@@ -730,17 +740,19 @@
       t.allowEarly = allowEarly;
       t.isPaused = false;
 
+      saveStateToFirebase();
       openTimerForChild(child);
       render();
     };
 
     function updateTimersTick() {
       let needsRender = false;
+      let stateChanged = false;
       const now = Date.now();
 
       ['oskar', 'irma'].forEach(ch => {
         const t = activeTimers[ch];
-        if (t.targetEndTime && !t.isPaused) {
+        if (t && t.targetEndTime && !t.isPaused) {
           const calcRemaining = Math.max(0, Math.round((t.targetEndTime - now) / 1000));
           
           if (t.remainingSeconds !== calcRemaining) {
@@ -765,10 +777,10 @@
                 if (!childData.completedTasks.includes(t.itemId)) {
                   childData.completedTasks.push(t.itemId);
                   childData.stars = (childData.stars || 0) + task.stars;
-                  saveStateToFirebase();
                 }
               }
             }
+            stateChanged = true;
             if (modalTimerChild === ch) {
               showSuccessScreen(1, false);
             }
@@ -776,7 +788,11 @@
         }
       });
 
-      if (needsRender) render();
+      if (stateChanged) {
+        saveStateToFirebase();
+      } else if (needsRender) {
+        render();
+      }
     }
 
     window.openTimerForChild = function(child) {
@@ -802,6 +818,7 @@
 
     function updateModalTimerDisplay(child) {
       const t = activeTimers[child];
+      if (!t) return;
       const m = Math.floor(t.remainingSeconds / 60).toString().padStart(2, '0');
       const s = (t.remainingSeconds % 60).toString().padStart(2, '0');
       
@@ -816,7 +833,7 @@
 
     window.completeTimerEarly = function(child = modalTimerChild) {
       const t = activeTimers[child];
-      if (!t.itemId) return;
+      if (!t || !t.itemId) return;
 
       const childData = dbData[child];
       const task = dbData.tasks.find(tk => tk.id === t.itemId);
@@ -831,7 +848,6 @@
         const earnedStars = task.stars + (isSuperFast ? 1 : 0);
 
         childData.stars = (childData.stars || 0) + earnedStars;
-        saveStateToFirebase();
         playSound('success');
 
         confetti({ particleCount: isSuperFast ? 130 : 80, spread: 90, origin: { y: 0.5 } });
@@ -876,6 +892,7 @@
         } else {
           t.targetEndTime = Date.now() + (t.remainingSeconds * 1000);
         }
+        saveStateToFirebase();
         updateModalTimerDisplay(modalTimerChild);
       }
     };
@@ -889,6 +906,7 @@
       t.remainingSeconds = 0;
       t.targetEndTime = null;
       t.itemId = null;
+      saveStateToFirebase();
       if (modalTimerChild === child) {
         document.getElementById('timer-modal').classList.add('hidden');
         modalTimerChild = null;
@@ -1030,8 +1048,13 @@
           tasks: [...defaultTasks],
           rewards: [...defaultRewards],
           oskar: { stars: 0, completedTasks: [] },
-          irma: { stars: 0, completedTasks: [] }
+          irma: { stars: 0, completedTasks: [] },
+          activeTimers: {
+            oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
+            irma: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
+          }
         };
+        activeTimers = dbData.activeTimers;
         saveStateToFirebase();
       }
     };
@@ -1043,8 +1066,13 @@
           tasks: [...defaultTasks],
           rewards: [...defaultRewards],
           oskar: { stars: 0, completedTasks: [] },
-          irma: { stars: 0, completedTasks: [] }
+          irma: { stars: 0, completedTasks: [] },
+          activeTimers: {
+            oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
+            irma: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
+          }
         };
+        activeTimers = dbData.activeTimers;
         saveStateToFirebase();
       }
     };
