@@ -120,6 +120,32 @@
         </div>
       </div>
 
+      <!-- Profil-Status (Kindergarten / Schule) -->
+      <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100 space-y-4">
+        <h3 class="font-bold text-slate-800 font-heading text-base flex items-center gap-2">
+          <i class="fa-solid fa-graduation-cap text-indigo-600"></i> Kind-Profil (Schule vs. Kindergarten)
+        </h3>
+        <p class="text-xs text-slate-500">Wenn du hier auf Schulkind umschaltest, werden Schulaufgaben (Ranzen packen & Hausaufgaben) sofort für das Kind aktiviert – ohne Punkteverlust!</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between">
+            <span class="font-bold font-heading text-slate-700">👦 Oskar Status:</span>
+            <select id="profile-status-oskar" onchange="updateProfileType('oskar', this.value)" class="p-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 bg-slate-50">
+              <option value="school">🎒 Schulkind</option>
+              <option value="kindergarten">🧸 Kindergarten</option>
+            </select>
+          </div>
+
+          <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between">
+            <span class="font-bold font-heading text-slate-700">👧 Irma Status:</span>
+            <select id="profile-status-irma" onchange="updateProfileType('irma', this.value)" class="p-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 bg-slate-50">
+              <option value="school">🎒 Schulkind</option>
+              <option value="kindergarten">🧸 Kindergarten</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Neue Aufgabe hinzufügen -->
         <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
@@ -132,8 +158,8 @@
             <div class="grid grid-cols-2 gap-2">
               <select id="new-task-child" class="p-3 rounded-xl border border-slate-200 font-semibold text-slate-700">
                 <option value="both">👥 Für Beide</option>
-                <option value="oskar">👦 Für Oskar</option>
-                <option value="irma">👧 Für Irma</option>
+                <option value="oskar">👦 Nur Oskar</option>
+                <option value="irma">👧 Nur Irma</option>
               </select>
               <select id="new-task-category" class="p-3 rounded-xl border border-slate-200 font-semibold text-slate-700">
                 <option value="morgen">🌅 Morgen</option>
@@ -201,7 +227,10 @@
                 <button onclick="selectIcon('👨', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-xs font-bold">👨 Papa</button>
                 <button onclick="selectIcon('👩', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-xs font-bold">👩 Mama</button>
                 <button onclick="selectIcon('👩‍👨', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-xs font-bold">👩‍👨 Elternduo</button>
-                <button onclick="selectIcon('📺', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-xs font-bold" title="TV Zeit">📺 TV</button>
+                <button onclick="selectIcon('📺', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-xs font-bold">📺 TV</button>
+                <button onclick="selectIcon('🍬', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base" title="Süßigkeiten">🍬</button>
+                <button onclick="selectIcon('🏊‍♂️', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base" title="Schwimmen">🏊‍♂️</button>
+                <button onclick="selectIcon('🚲', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base" title="Fahrradfahren">🚲</button>
                 <button onclick="selectIcon('🧱', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base">🧱</button>
                 <button onclick="selectIcon('🍦', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base">🍦</button>
                 <button onclick="selectIcon('🛝', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base">🛝</button>
@@ -339,15 +368,18 @@
     const app = initializeApp(firebaseConfig);
     const dbRef = getDatabase(app);
 
-    const defaultTasks = [
+    const baseDefaultTasks = [
       { id: '1', child: 'both', title: 'Zähne putzen', category: 'morgen', stars: 1, minutes: 3, icon: '🦷', allowEarly: false },
       { id: '2', child: 'both', title: 'Anziehen', category: 'morgen', stars: 1, minutes: 5, icon: '👕', allowEarly: true },
       { id: '3', child: 'both', title: 'Frühstücken', category: 'morgen', stars: 1, minutes: 0, icon: '🥣', allowEarly: true },
-      { id: '4', child: 'both', title: 'Schulranzen packen', category: 'morgen', stars: 1, minutes: 0, icon: '🎒', allowEarly: true },
       { id: '5', child: 'both', title: 'Zimmer aufräumen', category: 'tag', stars: 2, minutes: 10, icon: '🧹', allowEarly: true },
-      { id: '6', child: 'both', title: 'Hausaufgaben machen', category: 'tag', stars: 2, minutes: 20, icon: '📚', allowEarly: true },
       { id: '7', child: 'both', title: 'Schlafanzug anziehen', category: 'abend', stars: 1, minutes: 5, icon: '🛏️', allowEarly: true },
       { id: '8', child: 'both', title: 'Zähne putzen', category: 'abend', stars: 1, minutes: 3, icon: '🦷', allowEarly: false }
+    ];
+
+    const schoolTasksDefinitions = [
+      { id: 'school_pack', title: 'Schulranzen packen', category: 'morgen', stars: 1, minutes: 0, icon: '🎒', allowEarly: true },
+      { id: 'school_homework', title: 'Hausaufgaben machen', category: 'tag', stars: 2, minutes: 20, icon: '📚', allowEarly: true }
     ];
 
     const defaultRewards = [
@@ -361,10 +393,10 @@
 
     let dbData = {
       lastResetDate: '',
-      tasks: [...defaultTasks],
+      tasks: [],
       rewards: [...defaultRewards],
-      oskar: { stars: 0, completedTasks: [] },
-      irma: { stars: 0, completedTasks: [] },
+      oskar: { stars: 0, completedTasks: [], profileType: 'school' }, // Korrigiert auf 0 Startsterne!
+      irma: { stars: 0, completedTasks: [], profileType: 'kindergarten' },
       activeTimers: {
         oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
         irma: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
@@ -373,15 +405,45 @@
 
     let activeTimers = dbData.activeTimers;
 
+    function buildTasksList(oskarType, irmaType, existingCustomTasks = []) {
+      let tasks = [...baseDefaultTasks];
+
+      if (oskarType === 'school') {
+        schoolTasksDefinitions.forEach(st => {
+          tasks.push({ ...st, id: 'oskar_' + st.id, child: 'oskar' });
+        });
+      }
+
+      if (irmaType === 'school') {
+        schoolTasksDefinitions.forEach(st => {
+          tasks.push({ ...st, id: 'irma_' + st.id, child: 'irma' });
+        });
+      }
+
+      existingCustomTasks.forEach(ct => {
+        if (!tasks.some(t => t.id === ct.id)) {
+          tasks.push(ct);
+        }
+      });
+
+      return tasks;
+    }
+
     // Live-Synchronisation aus der Cloud
     onValue(ref(dbRef, 'appState'), (snapshot) => {
       const data = snapshot.val();
       if (data) {
         dbData = data;
-        if (!dbData.oskar) dbData.oskar = { stars: 0, completedTasks: [] };
-        if (!dbData.irma) dbData.irma = { stars: 0, completedTasks: [] };
+        if (!dbData.oskar) dbData.oskar = { stars: 0, completedTasks: [], profileType: 'school' };
+        if (!dbData.irma) dbData.irma = { stars: 0, completedTasks: [], profileType: 'kindergarten' };
+        if (!dbData.oskar.profileType) dbData.oskar.profileType = 'school';
+        if (!dbData.irma.profileType) dbData.irma.profileType = 'kindergarten';
         if (!Array.isArray(dbData.tasks)) dbData.tasks = [];
         if (!Array.isArray(dbData.rewards)) dbData.rewards = [];
+        
+        const customTasks = dbData.tasks.filter(t => !t.id.startsWith('oskar_school_') && !t.id.startsWith('irma_school_') && !baseDefaultTasks.some(bt => bt.id === t.id));
+        dbData.tasks = buildTasksList(dbData.oskar.profileType, dbData.irma.profileType, customTasks);
+
         if (!dbData.activeTimers) {
           dbData.activeTimers = {
             oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
@@ -389,9 +451,16 @@
           };
         }
         activeTimers = dbData.activeTimers;
+        
+        const selOskar = document.getElementById('profile-status-oskar');
+        const selIrma = document.getElementById('profile-status-irma');
+        if (selOskar) selOskar.value = dbData.oskar.profileType;
+        if (selIrma) selIrma.value = dbData.irma.profileType;
+
         checkDailyReset();
         render();
       } else {
+        dbData.tasks = buildTasksList('school', 'kindergarten');
         saveStateToFirebase();
       }
     });
@@ -437,6 +506,17 @@
       render();
     };
 
+    window.updateProfileType = function(child, type) {
+      if (!dbData[child]) dbData[child] = { stars: 0, completedTasks: [] };
+      dbData[child].profileType = type;
+
+      const customTasks = dbData.tasks.filter(t => !t.id.startsWith('oskar_school_') && !t.id.startsWith('irma_school_') && !baseDefaultTasks.some(bt => bt.id === t.id));
+      dbData.tasks = buildTasksList(dbData.oskar.profileType, dbData.irma.profileType, customTasks);
+
+      saveStateToFirebase();
+      render();
+    };
+
     function playSound(type) {
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -466,6 +546,11 @@
     function render() {
       const childData = dbData[activeChild] || { stars: 0, completedTasks: [] };
       document.getElementById('star-count').innerText = childData.stars || 0;
+
+      const selOskar = document.getElementById('profile-status-oskar');
+      const selIrma = document.getElementById('profile-status-irma');
+      if (selOskar && dbData.oskar) selOskar.value = dbData.oskar.profileType || 'school';
+      if (selIrma && dbData.irma) selIrma.value = dbData.irma.profileType || 'kindergarten';
 
       const taskList = document.getElementById('task-list');
       const rewardList = document.getElementById('reward-list');
@@ -705,7 +790,6 @@
       const task = dbData.tasks.find(t => t.id === id);
       if (task && childData) {
         if (!Array.isArray(childData.completedTasks)) childData.completedTasks = [];
-        // Einmal-pro-Tag-Sperre: Wenn bereits erledigt, im Kindermodus nicht rückgängig machen!
         if (!childData.completedTasks.includes(id)) {
           childData.completedTasks.push(id);
           childData.stars = (childData.stars || 0) + task.stars;
@@ -717,7 +801,6 @@
       }
     };
 
-    // Spezieller Eltern-Unlock für einzelne Aufgaben mit Sternen-Korrektur
     window.parentUnlockTask = function(child, taskId) {
       if (!isParentUnlocked) return;
       const childData = dbData[child];
@@ -728,7 +811,6 @@
         const index = childData.completedTasks.indexOf(taskId);
         if (index !== -1) {
           childData.completedTasks.splice(index, 1);
-          // Sterne fair abziehen (minimal 0)
           childData.stars = Math.max(0, (childData.stars || 0) - task.stars);
           saveStateToFirebase();
           render();
@@ -755,7 +837,7 @@
     window.startTimer = function(child, minutes, title, icon, itemId = null, allowEarly = false) {
       const childData = dbData[child];
       if (itemId && childData && (childData.completedTasks || []).includes(itemId)) {
-        return; // Bereits für heute erledigt -> Nicht erneut starten!
+        return;
       }
 
       const t = activeTimers[child];
@@ -1070,31 +1152,24 @@
     };
 
     window.resetToDefaults = function() {
-      if (confirm('Möchtest du alle Aufgaben, Belohnungen und die Punkte beider Kinder komplett auf Null zurücksetzen?')) {
-        dbData = {
-          lastResetDate: new Date().toISOString().split('T')[0],
-          tasks: [...defaultTasks],
-          rewards: [...defaultRewards],
-          oskar: { stars: 0, completedTasks: [] },
-          irma: { stars: 0, completedTasks: [] },
-          activeTimers: {
-            oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
-            irma: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
-          }
-        };
-        activeTimers = dbData.activeTimers;
+      if (confirm('Möchtest du alle Aufgaben und Belohnungen auf den Standard zurücksetzen? (Deine Punkte bleiben dabei erhalten!)')) {
+        const oskarType = dbData.oskar?.profileType || 'school';
+        const irmaType = dbData.irma?.profileType || 'kindergarten';
+
+        dbData.tasks = buildTasksList(oskarType, irmaType);
+        dbData.rewards = [...defaultRewards];
         saveStateToFirebase();
       }
     };
 
     window.clearAllData = function() {
-      if (confirm('Achtung: Möchtest du wirklich alle Daten beider Kinder löschen?')) {
+      if (confirm('Achtung: Möchtest du wirklich alle Daten inklusive aller Punkte komplett löschen?')) {
         dbData = {
           lastResetDate: '',
-          tasks: [...defaultTasks],
+          tasks: buildTasksList('school', 'kindergarten'),
           rewards: [...defaultRewards],
-          oskar: { stars: 0, completedTasks: [] },
-          irma: { stars: 0, completedTasks: [] },
+          oskar: { stars: 0, completedTasks: [], profileType: 'school' },
+          irma: { stars: 0, completedTasks: [], profileType: 'kindergarten' },
           activeTimers: {
             oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
             irma: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
