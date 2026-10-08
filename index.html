@@ -462,13 +462,22 @@
           const isCompleted = (childData.completedTasks || []).includes(task.id);
           const childTimer = activeTimers[activeChild];
           const isTimerActive = childTimer.itemId === task.id && childTimer.remainingSeconds > 0;
+          
           const progressPercent = isTimerActive ? ((childTimer.totalSeconds - childTimer.remainingSeconds) / childTimer.totalSeconds) * 100 : 0;
+          const remainingPercent = 100 - progressPercent;
+
+          let barColor = 'bg-green-500';
+          if (remainingPercent < 50) barColor = 'bg-amber-400';
+          if (remainingPercent < 20) barColor = 'bg-red-500';
+
           const canAllowEarly = task.allowEarly !== false;
 
           return `
             <div class="bg-white rounded-3xl p-5 shadow-sm border-2 transition-all relative overflow-hidden flex flex-col justify-between ${isTimerActive ? 'border-amber-400 active-card-pulse' : (isCompleted ? 'border-green-300 bg-green-50/30' : 'border-slate-100')}">
               ${isTimerActive ? `
-                <div class="absolute top-0 left-0 h-2 bg-amber-400 transition-all duration-300" style="width: ${progressPercent}%"></div>
+                <div class="absolute top-0 left-0 h-2 bg-slate-100 w-full">
+                  <div class="${barColor} h-full transition-all duration-300" style="width: ${remainingPercent}%"></div>
+                </div>
               ` : ''}
 
               <div class="flex items-start justify-between space-x-3 mb-4">
@@ -494,15 +503,22 @@
 
               <div>
                 ${isTimerActive ? `
-                  <div class="flex gap-2">
-                    <button onclick="openTimerForChild('${activeChild}')" class="flex-1 py-3 bg-slate-900 text-amber-400 font-black font-heading rounded-2xl shadow-sm flex items-center justify-center space-x-2">
-                      <span>⏱️ ${formatTime(childTimer.remainingSeconds)}</span>
-                    </button>
-                    ${canAllowEarly ? `
-                      <button onclick="completeTimerEarly('${activeChild}')" class="px-5 py-3 bg-green-500 hover:bg-green-600 text-white font-bold font-heading rounded-2xl shadow-sm transition">
-                        Fertig! 🎉
+                  <div class="space-y-2">
+                    <!-- Visueller Ladebalken direkt auf der Karte -->
+                    <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+                      <div class="${barColor} h-full transition-all duration-300" style="width: ${remainingPercent}%"></div>
+                    </div>
+
+                    <div class="flex gap-2">
+                      <button onclick="openTimerForChild('${activeChild}')" class="flex-1 py-3 bg-slate-900 text-amber-400 font-black font-heading rounded-2xl shadow-sm flex items-center justify-center space-x-2">
+                        <span>⏱️ ${formatTime(childTimer.remainingSeconds)}</span>
                       </button>
-                    ` : ''}
+                      ${canAllowEarly ? `
+                        <button onclick="completeTimerEarly('${activeChild}')" class="px-5 py-3 bg-green-500 hover:bg-green-600 text-white font-bold font-heading rounded-2xl shadow-sm transition">
+                          Fertig! 🎉
+                        </button>
+                      ` : ''}
+                    </div>
                   </div>
                 ` : (isCompleted ? `
                   <button onclick="toggleTask('${task.id}')" class="w-full py-3 bg-green-500 text-white font-bold font-heading rounded-2xl shadow-sm flex items-center justify-center space-x-2">
@@ -531,12 +547,20 @@
           const canAfford = childData.stars >= reward.cost;
           const childTimer = activeTimers[activeChild];
           const isTimerActive = childTimer.itemId === reward.id && childTimer.remainingSeconds > 0;
+          
           const progressPercent = isTimerActive ? ((childTimer.totalSeconds - childTimer.remainingSeconds) / childTimer.totalSeconds) * 100 : 0;
+          const remainingPercent = 100 - progressPercent;
+
+          let barColor = 'bg-green-500';
+          if (remainingPercent < 50) barColor = 'bg-amber-400';
+          if (remainingPercent < 20) barColor = 'bg-red-500';
 
           return `
             <div class="bg-white rounded-3xl p-5 shadow-sm border-2 relative overflow-hidden flex flex-col justify-between ${isTimerActive ? 'border-amber-400 active-card-pulse' : 'border-slate-100'}">
               ${isTimerActive ? `
-                <div class="absolute top-0 left-0 h-2 bg-amber-400 transition-all duration-300" style="width: ${progressPercent}%"></div>
+                <div class="absolute top-0 left-0 h-2 bg-slate-100 w-full">
+                  <div class="${barColor} h-full transition-all duration-300" style="width: ${remainingPercent}%"></div>
+                </div>
               ` : ''}
 
               <div class="flex items-start justify-between space-x-3 mb-4">
@@ -562,10 +586,14 @@
 
               <div>
                 ${isTimerActive ? `
-                  <button onclick="openTimerForChild('${activeChild}')" class="w-full py-3 bg-slate-900 text-amber-400 font-black font-heading rounded-2xl shadow-sm flex items-center justify-center space-x-2">
-                    <span>⏱️ Timer läuft:</span>
-                    <span class="text-lg">${formatTime(childTimer.remainingSeconds)}</span>
-                  </button>
+                  <div class="space-y-2">
+                    <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+                      <div class="${barColor} h-full transition-all duration-300" style="width: ${remainingPercent}%"></div>
+                    </div>
+                    <button onclick="openTimerForChild('${activeChild}')" class="w-full py-3 bg-slate-900 text-amber-400 font-black font-heading rounded-2xl shadow-sm flex items-center justify-center space-x-2">
+                      <span>⏱️ Timer läuft: ${formatTime(childTimer.remainingSeconds)}</span>
+                    </button>
+                  </div>
                 ` : `
                   <button onclick="claimReward('${reward.id}')" ${!canAfford ? 'disabled' : ''} class="w-full py-3 rounded-2xl font-bold font-heading transition shadow-sm ${canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}">
                     ${canAfford ? '🎉 Einlösen!' : 'Zu wenig Sterne'}
@@ -724,7 +752,7 @@
         }
       });
 
-      if (needsRender) renderFloatingWidgets();
+      if (needsRender) render();
     }
 
     function openTimerForChild(child) {
