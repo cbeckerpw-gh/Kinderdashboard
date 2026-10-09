@@ -936,6 +936,14 @@
             var m = Math.floor(t.remainingSeconds / 60);
             var s = t.remainingSeconds % 60;
             document.getElementById('timer-display').innerText = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+            
+            // SVG-Kreis Animation im Modal aktualisieren (Umfang bei r=80 ist ca. 502.6)
+            var circle = document.getElementById('timer-circle');
+            if (circle && t.totalSeconds > 0) {
+              var progress = t.remainingSeconds / t.totalSeconds;
+              var dashOffset = 502.6 * (1 - progress);
+              circle.style.strokeDashoffset = dashOffset;
+            }
           }
           if (t.remainingSeconds <= 0) {
             t.targetEndTime = null;
@@ -949,8 +957,7 @@
                   childData.stars = (childData.stars || 0) + task.stars;
                 }
                 
-                // Automatisches Anzeigen und Aktualisieren des Erfolgs-Pop-ups für 10 Sekunden
-                showSuccessScreen(ch, task.title, task.stars + (t.allowEarly === false ? 0 : 0));
+                showSuccessScreen(ch, task.title, task.stars);
               }
             }
             stateChanged = true;
@@ -974,6 +981,14 @@
         earlyBtn.style.display = t.allowEarly !== false ? 'block' : 'none';
       }
 
+      // Kreis beim Öffnen sofort korrekt setzen
+      var circle = document.getElementById('timer-circle');
+      if (circle && t.totalSeconds > 0) {
+        var progress = t.remainingSeconds / t.totalSeconds;
+        var dashOffset = 502.6 * (1 - progress);
+        circle.style.strokeDashoffset = dashOffset;
+      }
+
       document.getElementById('timer-modal').style.display = 'flex';
     };
 
@@ -988,7 +1003,6 @@
       playSound('success');
       confetti({ particleCount: 100, spread: 80 });
 
-      // Alten Schließ-Timer zurücksetzen, falls er schon lief (damit er bei neuer Meldung wieder auf 10 Sek springt)
       if (successCloseTimer) clearTimeout(successCloseTimer);
       successCloseTimer = setTimeout(function() {
         closeSuccessScreen();
