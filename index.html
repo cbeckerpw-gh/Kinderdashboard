@@ -963,6 +963,13 @@
       document.getElementById('timer-title').innerText = t.title;
       document.getElementById('timer-running-view').classList.remove('hidden');
       document.getElementById('timer-success-view').classList.add('hidden');
+      
+      // Prüfen, ob das frühzeitige Fertigmelden erlaubt ist
+      var earlyBtn = document.getElementById('timer-early-btn');
+      if (earlyBtn) {
+        earlyBtn.style.display = t.allowEarly !== false ? 'block' : 'none';
+      }
+
       document.getElementById('timer-modal').style.display = 'flex';
     };
 
