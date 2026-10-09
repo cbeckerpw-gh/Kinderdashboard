@@ -338,12 +338,11 @@
               </div>
             </div>
 
-            <!-- Checkbox frühzeitig Fertig-Melden -->
+            <!-- Checkbox frühzeitig Fertig-Melden (Standard: nicht ausgewählt) -->
             <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.25rem;">
-              <input type="checkbox" id="new-task-allow-early" checked style="width:1rem; height:1rem;">
+              <input type="checkbox" id="new-task-allow-early" style="width:1.0rem; height:1.0rem;">
               <label for="new-task-allow-early" style="font-size:0.75rem; font-weight:600; color:#475569;">Frühzeitiges "Fertig"-Melden erlauben (mit Bonus-Stern)</label>
             </div>
-
             <button onclick="addTask()" style="width:100%; padding:0.75rem; background:#4f46e5; color:#fff; font-weight:700; border-radius:0.75rem; border:none; cursor:pointer; margin-top:0.25rem;">Aufgabe Speichern</button>
           </div>
         </div>
@@ -997,6 +996,48 @@
         saveStateToFirebase();
         document.getElementById('timer-modal').classList.add('hidden');
         modalTimerChild = null;
+        render();
+      }
+    };
+
+    window.resetDailyTasks = function() {
+      if (confirm('Möchtest du die Tagesaufgaben für heute zurücksetzen?')) {
+        if (!dbData.oskar) dbData.oskar = { stars: 0, completedTasks: [] };
+        if (!dbData.irma) dbData.irma = { stars: 0, completedTasks: [] };
+        dbData.oskar.completedTasks = [];
+        dbData.irma.completedTasks = [];
+        saveStateToFirebase();
+        render();
+      }
+    };
+
+    window.resetToDefaults = function() {
+      if (confirm('Möchtest du alle Aufgaben und Belohnungen auf den Standard zurücksetzen? (Deine Punkte bleiben dabei erhalten!)')) {
+        var oskarType = dbData.oskar && dbData.oskar.profileType ? dbData.oskar.profileType : 'school';
+        var irmaType = dbData.irma && dbData.irma.profileType ? dbData.irma.profileType : 'kindergarten';
+
+        dbData.tasks = buildTasksList(oskarType, irmaType);
+        dbData.rewards = [].concat(defaultRewards);
+        saveStateToFirebase();
+        render();
+      }
+    };
+
+    window.clearAllData = function() {
+      if (confirm('⚠️ ACHTUNG: Möchtest du wirklich alle Daten inklusive aller Punkte komplett löschen?')) {
+        dbData = {
+          lastResetDate: '',
+          tasks: buildTasksList('school', 'kindergarten'),
+          rewards: [].concat(defaultRewards),
+          oskar: { stars: 0, completedTasks: [], profileType: 'school' },
+          irma: { stars: 0, completedTasks: [], profileType: 'kindergarten' },
+          activeTimers: {
+            oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
+            irma: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
+          }
+        };
+        activeTimers = dbData.activeTimers;
+        saveStateToFirebase();
         render();
       }
     };
