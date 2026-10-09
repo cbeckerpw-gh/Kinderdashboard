@@ -664,6 +664,20 @@
       render();
     };
 
+    window.uncompleteTask = function(taskId) {
+      var childData = dbData[activeChild];
+      var task = dbData.tasks.find(function(t) { return t.id === taskId; });
+      if (task && childData && Array.isArray(childData.completedTasks)) {
+        var index = childData.completedTasks.indexOf(taskId);
+        if (index !== -1) {
+          childData.completedTasks.splice(index, 1);
+          childData.stars = Math.max(0, (childData.stars || 0) - task.stars);
+          saveStateToFirebase();
+          render();
+        }
+      }
+    };
+
     window.resetDailyTasks = function() {
       if (confirm('Möchtest du die Tagesaufgaben für heute zurücksetzen?')) {
         if (!dbData.oskar) dbData.oskar = { stars: 0, completedTasks: [] };
@@ -745,6 +759,29 @@
 
           var canAllowEarly = task.allowEarly !== false;
 
+          var actionButtonHtml = '';
+          if (isTimerActive) {
+            actionButtonHtml = '<div style="display:flex; flex-direction:column; gap:0.75rem;">' +
+              '<div style="width:100%; background:#f1f5f9; height:0.75rem; border-radius:9999px; overflow:hidden; border:1px solid #e2e8f0;">' +
+                '<div style="background:' + (remainingPercent < 20 ? '#dc2626' : (remainingPercent < 50 ? '#fbbf24' : '#22c55e')) + '; height:100%; width:' + remainingPercent + '%;"></div>' +
+              '</div>' +
+              '<div style="display:flex; gap:0.5rem;">' +
+                '<button type="button" onclick="openTimerForChild(\'' + activeChild + '\')" style="flex:1; padding:0.75rem; background:#0f172a; color:#fbbf24; font-weight:900; border-radius:1rem; border:none; cursor:pointer; font-family:\'Fredoka\',sans-serif;">⏱️ ' + formatTime(childTimer.remainingSeconds) + '</button>' +
+                (canAllowEarly ? '<button type="button" onclick="completeTimerEarly(\'' + activeChild + '\')" style="padding:0.75rem 1.25rem; background:#22c55e; color:#fff; font-weight:700; border-radius:1rem; border:none; cursor:pointer; font-family:\'Fredoka\',sans-serif;">Fertig! 🎉</button>' : '') +
+              '</div>' +
+            '</div>';
+          } else if (isCompleted) {
+            if (isParentUnlocked) {
+              actionButtonHtml = '<button type="button" onclick="uncompleteTask(\'' + task.id + '\')" style="width:100%; padding:0.75rem; background:#fef2f2; color:#dc2626; font-weight:700; border-radius:1rem; border:1px solid #fecaca; cursor:pointer; font-family:\'Fredoka\',sans-serif;">↩️ Aufgabe zurücksetzen (Stern abziehen)</button>';
+            } else {
+              actionButtonHtml = '<div style="width:100%; padding:0.75rem; background:#dcfce7; color:#15803d; font-weight:700; border-radius:1rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; border:1px solid #bbf7d0; font-family:\'Fredoka\',sans-serif;"><i class="fa-solid fa-check"></i><span>Erledigt für heute!</span></div>';
+            }
+          } else if (task.minutes) {
+            actionButtonHtml = '<button type="button" onclick="startTimer(\'' + activeChild + '\',' + task.minutes + ', \'' + task.title + '\', \'' + task.icon + '\', \'' + task.id + '\',' + canAllowEarly + ')" style="width:100%; padding:0.75rem; background:#4f46e5; color:#fff; font-weight:700; border-radius:1rem; border:none; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-family:\'Fredoka\',sans-serif;">Starten (' + task.minutes + ' Min)</button>';
+          } else {
+            actionButtonHtml = '<button type="button" onclick="toggleTask(\'' + task.id + '\')" style="width:100%; padding:0.75rem; background:#fbbf24; color:#1e293b; font-weight:700; border-radius:1rem; border:none; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-family:\'Fredoka\',sans-serif;">Erledigen!</button>';
+          }
+
           return '<div style="border-color: ' + (isTimerActive ? '#fbbf24' : (isCompleted ? '#bbf7d0' : '#f1f5f9')) + '; border-width: 2px; border-style: solid; border-radius: 1.5rem; padding: 1.25rem; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; position: relative;">' +
             '<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">' +
               '<div style="display:flex; align-items:center; gap:0.75rem;">' +
@@ -759,23 +796,7 @@
               '</div>' +
               (isParentUnlocked ? '<button type="button" onclick="deleteItem(\'task\', \'' + task.id + '\')" style="background:transparent; border:none; color:#cbd5e1; cursor:pointer; font-size:1rem;" title="Löschen"><i class="fa-solid fa-trash-can"></i></button>' : '') +
             '</div>' +
-            '<div>' +
-              (isTimerActive ? 
-                '<div style="display:flex; flex-direction:column; gap:0.75rem;">' +
-                  '<div style="width:100%; background:#f1f5f9; height:0.75rem; border-radius:9999px; overflow:hidden; border:1px solid #e2e8f0;">' +
-                    '<div style="background:' + (remainingPercent < 20 ? '#dc2626' : (remainingPercent < 50 ? '#fbbf24' : '#22c55e')) + '; height:100%; width:' + remainingPercent + '%;"></div>' +
-                  '</div>' +
-                  '<div style="display:flex; gap:0.5rem;">' +
-                    '<button type="button" onclick="openTimerForChild(\'' + activeChild + '\')" style="flex:1; padding:0.75rem; background:#0f172a; color:#fbbf24; font-weight:900; border-radius:1rem; border:none; cursor:pointer; font-family:\'Fredoka\',sans-serif;">⏱️ ' + formatTime(childTimer.remainingSeconds) + '</button>' +
-                    (canAllowEarly ? '<button type="button" onclick="completeTimerEarly(\'' + activeChild + '\')" style="padding:0.75rem 1.25rem; background:#22c55e; color:#fff; font-weight:700; border-radius:1rem; border:none; cursor:pointer; font-family:\'Fredoka\',sans-serif;">Fertig! 🎉</button>' : '') +
-                  '</div>' +
-                '</div>' 
-              : (isCompleted ? 
-                '<div style="width:100%; padding:0.75rem; background:#dcfce7; color:#15803d; font-weight:700; border-radius:1rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; border:1px solid #bbf7d0; font-family:\'Fredoka\',sans-serif;"><i class="fa-solid fa-check"></i><span>Erledigt für heute!</span></div>' 
-              : (task.minutes ? 
-                '<button type="button" onclick="startTimer(\'' + activeChild + '\',' + task.minutes + ', \'' + task.title + '\', \'' + task.icon + '\', \'' + task.id + '\',' + canAllowEarly + ')" style="width:100%; padding:0.75rem; background:#4f46e5; color:#fff; font-weight:700; border-radius:1rem; border:none; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-family:\'Fredoka\',sans-serif;">Starten (' + task.minutes + ' Min)</button>' 
-              : '<button type="button" onclick="toggleTask(\'' + task.id + '\')" style="width:100%; padding:0.75rem; background:#fbbf24; color:#1e293b; font-weight:700; border-radius:1rem; border:none; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-family:\'Fredoka\',sans-serif;">Erledigen!</button>'))) +
-            '</div>' +
+            '<div>' + actionButtonHtml + '</div>' +
           '</div>';
         }).join('') : '<p style="text-align:center; color:#94a3b8; padding:2rem; grid-column:span 2; font-weight:500;">Keine Aufgaben in dieser Kategorie.</p>';
       }
