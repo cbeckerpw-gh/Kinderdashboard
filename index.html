@@ -824,12 +824,14 @@
 
     window.switchTab = function(tab) {
       if (tab === 'parent' && !isParentUnlocked) {
-        document.getElementById('pin-input').value = '';
-        document.getElementById('pin-modal').style.display = 'flex';
+        var pinInput = document.getElementById('pin-input');
+        if (pinInput) pinInput.value = '';
+        var pinModal = document.getElementById('pin-modal');
+        if (pinModal) pinModal.style.display = 'flex';
         return;
       }
       currentTab = tab;
-      ['morgen', 'tag', 'abend', 'belohnungen'].forEach(function(t) {
+      ['morgen', 'tag', 'abend', 'belohnungen', 'parent'].forEach(function(t) {
         var btn = document.getElementById('tab-' + t);
         if (btn) {
           if (t === tab) {
@@ -971,10 +973,16 @@
 
     window.handleParentButtonClick = function() {
       if (isParentUnlocked) {
-        switchTab(currentTab === 'parent' ? 'morgen' : 'parent');
+        if (currentTab === 'parent') {
+          switchTab('morgen');
+        } else {
+          switchTab('parent');
+        }
       } else {
-        document.getElementById('pin-input').value = '';
-        document.getElementById('pin-modal').style.display = 'flex';
+        var pinInput = document.getElementById('pin-input');
+        if (pinInput) pinInput.value = '';
+        var pinModal = document.getElementById('pin-modal');
+        if (pinModal) pinModal.style.display = 'flex';
       }
     };
 
