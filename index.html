@@ -91,7 +91,7 @@
 </head>
 <body>
 
-  <!-- Parallele Floating Widgets für Oskar & Irma (Unten Rechts gestapelt) -->
+  <!-- Parallele Floating Widgets für alle laufenden Timer (Unten Rechts gestapelt) -->
   <div id="floating-timers-container" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 99; display: flex; flex-direction: column; gap: 0.75rem; max-width: 20rem; width: 100%; pointer-events: none;"></div>
 
   <!-- Main Container -->
@@ -374,7 +374,7 @@
     var PARENT_PIN = "1234";
     var isParentUnlocked = false;
     var activeChild = 'oskar';
-    var modalTimerChild = null;
+    var activeModalTimerId = null; // Speichert die ID des aktuell im Modal geöffneten Timers
     var successCloseTimer = null;
 
     var firebaseConfig = {
@@ -419,10 +419,7 @@
       rewards: [].concat(defaultRewards),
       oskar: { stars: 0, completedTasks: [], profileType: 'school' },
       irma: { stars: 0, completedTasks: [], profileType: 'kindergarten' },
-      activeTimers: {
-        oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
-        irma: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
-      }
+      activeTimers: [] // Array für beliebig viele parallele Timer
     };
 
     var activeTimers = dbData.activeTimers;
@@ -470,12 +467,7 @@
         });
         dbData.tasks = buildTasksList(dbData.oskar.profileType, dbData.irma.profileType, customTasks);
 
-        if (!dbData.activeTimers) {
-          dbData.activeTimers = {
-            oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
-            irma: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
-          };
-        }
+        if (!Array.isArray(dbData.activeTimers)) dbData.activeTimers = [];
         activeTimers = dbData.activeTimers;
         
         var selOskar = document.getElementById('profile-status-oskar');
@@ -711,10 +703,7 @@
           rewards: [].concat(defaultRewards),
           oskar: { stars: 0, completedTasks: [], profileType: 'school' },
           irma: { stars: 0, completedTasks: [], profileType: 'kindergarten' },
-          activeTimers: {
-            oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
-            irma: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
-          }
+          activeTimers: []
         };
         activeTimers = dbData.activeTimers;
         saveStateToFirebase();
@@ -753,10 +742,14 @@
         
         taskList.innerHTML = filteredTasks.length ? filteredTasks.map(function(task) {
           var isCompleted = (childData.completedTasks || []).indexOf(task.id) !== -1;
-          var childTimer = activeTimers[activeChild];
-          var isTimerActive = childTimer.itemId === task.id && childTimer.remainingSeconds > 0;
           
-          var progressPercent = isTimerActive ? ((childTimer.totalSeconds - childTimer.remainingSeconds) / childTimer.totalSeconds) * 100 : 0;
+          // Prüfen, ob für diese spezifische Aufgabe (für das aktive Kind) ein Timer läuft
+          var taskTimer = (activeTimers || []).find(function(t) {
+            return t.child === activeChild && t.itemId === task.id && t.remainingSeconds > 0;
+          });
+          var isTimerActive = !!taskTimer;
+          
+          var progressPercent = isTimerActive ? ((taskTimer.totalSeconds - taskTimer.remainingSeconds) / taskTimer.totalSeconds) * 100 : 0;
           var remainingPercent = 100 - progressPercent;
 
           var canAllowEarly = task.allowEarly !== false;
@@ -768,8 +761,8 @@
                 '<div style="background:' + (remainingPercent < 20 ? '#dc2626' : (remainingPercent < 50 ? '#fbbf24' : '#22c55e')) + '; height:100%; width:' + remainingPercent + '%;"></div>' +
               '</div>' +
               '<div style="display:flex; gap:0.5rem;">' +
-                '<button type="button" onclick="openTimerForChild(\'' + activeChild + '\')" style="flex:1; padding:0.75rem; background:#0f172a; color:#fbbf24; font-weight:900; border-radius:1rem; border:none; cursor:pointer; font-family:\'Fredoka\',sans-serif;">⏱️ ' + formatTime(childTimer.remainingSeconds) + '</button>' +
-                (canAllowEarly ? '<button type="button" onclick="completeTimerEarly(\'' + activeChild + '\')" style="padding:0.75rem 1.25rem; background:#22c55e; color:#fff; font-weight:700; border-radius:1rem; border:none; cursor:pointer; font-family:\'Fredoka\',sans-serif;">Fertig! 🎉</button>' : '') +
+                '<button type="button" onclick="openTimerModalById(\'' + taskTimer.timerUniqueId + '\')" style="flex:1; padding:0.75rem; background:#0f172a; color:#fbbf24; font-weight:900; border-radius:1rem; border:none; cursor:pointer; font-family:\'Fredoka\',sans-serif;">⏱️ ' + formatTime(taskTimer.remainingSeconds) + '</button>' +
+                (canAllowEarly ? '<button type="button" onclick="completeTimerEarlyById(\'' + taskTimer.timerUniqueId + '\')" style="padding:0.75rem 1.25rem; background:#22c55e; color:#fff; font-weight:700; border-radius:1rem; border:none; cursor:pointer; font-family:\'Fredoka\',sans-serif;">Fertig! 🎉</button>' : '') +
               '</div>' +
             '</div>';
           } else if (isCompleted) {
@@ -831,14 +824,13 @@
     function renderFloatingWidgets() {
       var container = document.getElementById('floating-timers-container');
       container.innerHTML = '';
-      ['oskar', 'irma'].forEach(function(ch) {
-        var t = activeTimers[ch];
+      (activeTimers || []).forEach(function(t) {
         if (t && t.remainingSeconds > 0) {
           var progressPercent = ((t.totalSeconds - t.remainingSeconds) / t.totalSeconds) * 100;
           var remainingPercent = 100 - progressPercent;
-          container.innerHTML += '<div onclick="openTimerForChild(\'' + ch + '\')" style="pointer-events: auto; background:#0f172a; color:#fff; padding:0.85rem 1.1rem; border-radius:1rem; border:2px solid ' + (ch === 'oskar' ? '#818cf8' : '#f472b6') + '; cursor:pointer; box-shadow:0 15px 25px -5px rgba(0,0,0,0.4); width:100%;">' +
+          container.innerHTML += '<div onclick="openTimerModalById(\'' + t.timerUniqueId + '\')" style="pointer-events: auto; background:#0f172a; color:#fff; padding:0.85rem 1.1rem; border-radius:1rem; border:2px solid ' + (t.child === 'oskar' ? '#818cf8' : '#f472b6') + '; cursor:pointer; box-shadow:0 15px 25px -5px rgba(0,0,0,0.4); width:100%;">' +
             '<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; font-weight:700; font-family:\'Fredoka\',sans-serif;">' +
-              '<span>' + (ch === 'oskar' ? '👦 Oskar' : '👧 Irma') + ' • ' + t.title + '</span>' +
+              '<span>' + (t.child === 'oskar' ? '👦 Oskar' : '👧 Irma') + ' • ' + t.title + '</span>' +
               '<span style="color:#fbbf24; font-size:0.95rem;">' + Math.floor(t.remainingSeconds / 60) + ':' + (t.remainingSeconds % 60 < 10 ? '0' : '') + (t.remainingSeconds % 60) + '</span>' +
             '</div>' +
             '<div style="width:100%; background:#1e293b; height:0.5rem; border-radius:9999px; margin-top:0.5rem; overflow:hidden;">' +
@@ -906,17 +898,26 @@
     };
 
     window.startTimer = function(child, minutes, title, icon, itemId, allowEarly) {
-      var t = activeTimers[child];
-      t.totalSeconds = minutes * 60;
-      t.targetEndTime = Date.now() + (t.totalSeconds * 1000);
-      t.remainingSeconds = t.totalSeconds;
-      t.title = title;
-      t.icon = icon || '⏱️';
-      t.itemId = itemId;
-      t.allowEarly = allowEarly;
-      t.isPaused = false;
+      if (!Array.isArray(activeTimers)) activeTimers = [];
+      var timerUniqueId = 'timer_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+      var totalSec = minutes * 60;
+      
+      var newTimer = {
+        timerUniqueId: timerUniqueId,
+        child: child,
+        itemId: itemId,
+        title: title,
+        icon: icon || '⏱️',
+        totalSeconds: totalSec,
+        remainingSeconds: totalSec,
+        targetEndTime: Date.now() + (totalSec * 1000),
+        isPaused: false,
+        allowEarly: allowEarly
+      };
+
+      activeTimers.push(newTimer);
       saveStateToFirebase();
-      openTimerForChild(child);
+      openTimerModalById(timerUniqueId);
       render();
     };
 
@@ -924,20 +925,22 @@
       var needsRender = false;
       var stateChanged = false;
       var now = Date.now();
-      ['oskar', 'irma'].forEach(function(ch) {
-        var t = activeTimers[ch];
+
+      if (!Array.isArray(activeTimers)) activeTimers = [];
+
+      activeTimers.forEach(function(t) {
         if (t && t.targetEndTime && !t.isPaused) {
           var calcRemaining = Math.max(0, Math.round((t.targetEndTime - now) / 1000));
           if (t.remainingSeconds !== calcRemaining) {
             t.remainingSeconds = calcRemaining;
             needsRender = true;
           }
-          if (modalTimerChild === ch) {
+          
+          if (activeModalTimerId === t.timerUniqueId) {
             var m = Math.floor(t.remainingSeconds / 60);
             var s = t.remainingSeconds % 60;
             document.getElementById('timer-display').innerText = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
             
-            // SVG-Kreis Animation im Modal aktualisieren (Umfang bei r=80 ist ca. 502.6)
             var circle = document.getElementById('timer-circle');
             if (circle && t.totalSeconds > 0) {
               var progress = t.remainingSeconds / t.totalSeconds;
@@ -945,10 +948,11 @@
               circle.style.strokeDashoffset = dashOffset;
             }
           }
+
           if (t.remainingSeconds <= 0) {
             t.targetEndTime = null;
             if (t.itemId) {
-              var childData = dbData[ch];
+              var childData = dbData[t.child];
               var task = dbData.tasks.find(function(tk) { return tk.id === t.itemId; });
               if (task && childData) {
                 if (!Array.isArray(childData.completedTasks)) childData.completedTasks = [];
@@ -957,21 +961,29 @@
                   childData.stars = (childData.stars || 0) + task.stars;
                 }
                 
-                showSuccessScreen(ch, task.title, task.stars);
+                showSuccessScreen(t.child, t.title, task.stars);
               }
             }
             stateChanged = true;
           }
         }
       });
-      if (stateChanged) saveStateToFirebase();
-      else if (needsRender) render();
+
+      if (stateChanged) {
+        // Abgelaufene Timer aus der Liste entfernen
+        activeTimers = activeTimers.filter(function(t) { return t.remainingSeconds > 0 && t.targetEndTime !== null; });
+        saveStateToFirebase();
+      } else if (needsRender) {
+        render();
+      }
     }
 
-    window.openTimerForChild = function(child) {
-      modalTimerChild = child;
-      var t = activeTimers[child];
-      document.getElementById('timer-child-badge').innerText = child === 'oskar' ? '👦 Oskar' : '👧 Irma';
+    window.openTimerModalById = function(timerUniqueId) {
+      var t = (activeTimers || []).find(function(tm) { return tm.timerUniqueId === timerUniqueId; });
+      if (!t) return;
+
+      activeModalTimerId = timerUniqueId;
+      document.getElementById('timer-child-badge').innerText = t.child === 'oskar' ? '👦 Oskar' : '👧 Irma';
       document.getElementById('timer-title').innerText = t.title;
       document.getElementById('timer-running-view').classList.remove('hidden');
       document.getElementById('timer-success-view').classList.add('hidden');
@@ -981,7 +993,6 @@
         earlyBtn.style.display = t.allowEarly !== false ? 'block' : 'none';
       }
 
-      // Kreis beim Öffnen sofort korrekt setzen
       var circle = document.getElementById('timer-circle');
       if (circle && t.totalSeconds > 0) {
         var progress = t.remainingSeconds / t.totalSeconds;
@@ -993,7 +1004,6 @@
     };
 
     window.showSuccessScreen = function(child, title, starsEarned) {
-      modalTimerChild = child;
       document.getElementById('timer-child-badge').innerText = child === 'oskar' ? '👦 Oskar' : '👧 Irma';
       document.getElementById('timer-title').innerText = title;
       document.getElementById('timer-running-view').classList.add('hidden');
@@ -1009,11 +1019,12 @@
       }, 10000);
     };
 
-    window.completeTimerEarly = function(child) {
-      if (!child) child = modalTimerChild;
-      var t = activeTimers[child];
+    window.completeTimerEarly = function() {
+      if (!activeModalTimerId) return;
+      var t = (activeTimers || []).find(function(tm) { return tm.timerUniqueId === activeModalTimerId; });
       if (!t || !t.itemId) return;
-      var childData = dbData[child];
+
+      var childData = dbData[t.child];
       var task = dbData.tasks.find(function(tk) { return tk.id === t.itemId; });
       if (task && childData) {
         if (!Array.isArray(childData.completedTasks)) childData.completedTasks = [];
@@ -1021,20 +1032,23 @@
         childData.stars = (childData.stars || 0) + task.stars + 1;
         confetti({ particleCount: 100, spread: 80 });
       }
+
       var completedTitle = t.title;
-      t.remainingSeconds = 0;
-      t.targetEndTime = null;
-      t.itemId = null;
+      var childName = t.child;
+      var starsWon = task ? task.stars + 1 : 1;
+
+      // Timer aus aktiven Timern entfernen
+      activeTimers = activeTimers.filter(function(tm) { return tm.timerUniqueId !== activeModalTimerId; });
       saveStateToFirebase();
       
-      showSuccessScreen(child, completedTitle, task ? task.stars + 1 : 1);
+      showSuccessScreen(childName, completedTitle, starsWon);
       render();
     };
 
     window.minimizeTimer = function() {
       if (successCloseTimer) clearTimeout(successCloseTimer);
       document.getElementById('timer-modal').style.display = 'none';
-      modalTimerChild = null;
+      activeModalTimerId = null;
     };
 
     window.handleTimerBackdropClick = function(event) {
@@ -1099,27 +1113,26 @@
       document.getElementById('timer-success-view').classList.add('hidden');
       document.getElementById('timer-running-view').classList.remove('hidden');
       document.getElementById('timer-modal').style.display = 'none';
-      modalTimerChild = null;
+      activeModalTimerId = null;
     };
 
     window.toggleTimerPause = function() {
-      if (modalTimerChild) {
-        var t = activeTimers[modalTimerChild];
-        t.isPaused = !t.isPaused;
-        t.targetEndTime = t.isPaused ? null : Date.now() + (t.remainingSeconds * 1000);
-        saveStateToFirebase();
+      if (activeModalTimerId) {
+        var t = (activeTimers || []).find(function(tm) { return tm.timerUniqueId === activeModalTimerId; });
+        if (t) {
+          t.isPaused = !t.isPaused;
+          t.targetEndTime = t.isPaused ? null : Date.now() + (t.remainingSeconds * 1000);
+          saveStateToFirebase();
+        }
       }
     };
 
     window.cancelCurrentTimer = function() {
-      if (modalTimerChild) {
-        var t = activeTimers[modalTimerChild];
-        t.remainingSeconds = 0;
-        t.targetEndTime = null;
-        t.itemId = null;
+      if (activeModalTimerId) {
+        activeTimers = (activeTimers || []).filter(function(tm) { return tm.timerUniqueId !== activeModalTimerId; });
         saveStateToFirebase();
         document.getElementById('timer-modal').style.display = 'none';
-        modalTimerChild = null;
+        activeModalTimerId = null;
         render();
       }
     };
