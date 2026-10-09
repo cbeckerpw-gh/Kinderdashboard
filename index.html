@@ -375,6 +375,7 @@
     var isParentUnlocked = false;
     var activeChild = 'oskar';
     var modalTimerChild = null;
+    var successCloseTimer = null;
 
     var firebaseConfig = {
       apiKey: "AIzaSyBKk4OuNeLd1kCademvgdX8ZelWHvHq_n8",
@@ -613,6 +614,7 @@
 
       titleEl.value = '';
       if (minutesEl) minutesEl.value = '';
+      if (allowEarlyEl) allowEarlyEl.checked = false;
       saveStateToFirebase();
       render();
       alert('Aufgabe erfolgreich gespeichert!');
@@ -946,6 +948,9 @@
                   childData.completedTasks.push(t.itemId);
                   childData.stars = (childData.stars || 0) + task.stars;
                 }
+                
+                // Automatisches Anzeigen und Aktualisieren des Erfolgs-Pop-ups für 10 Sekunden
+                showSuccessScreen(ch, task.title, task.stars + (t.allowEarly === false ? 0 : 0));
               }
             }
             stateChanged = true;
@@ -964,13 +969,30 @@
       document.getElementById('timer-running-view').classList.remove('hidden');
       document.getElementById('timer-success-view').classList.add('hidden');
       
-      // Prüfen, ob das frühzeitige Fertigmelden erlaubt ist
       var earlyBtn = document.getElementById('timer-early-btn');
       if (earlyBtn) {
         earlyBtn.style.display = t.allowEarly !== false ? 'block' : 'none';
       }
 
       document.getElementById('timer-modal').style.display = 'flex';
+    };
+
+    window.showSuccessScreen = function(child, title, starsEarned) {
+      modalTimerChild = child;
+      document.getElementById('timer-child-badge').innerText = child === 'oskar' ? '👦 Oskar' : '👧 Irma';
+      document.getElementById('timer-title').innerText = title;
+      document.getElementById('timer-running-view').classList.add('hidden');
+      document.getElementById('timer-success-view').classList.remove('hidden');
+      document.getElementById('timer-modal').style.display = 'flex';
+
+      playSound('success');
+      confetti({ particleCount: 100, spread: 80 });
+
+      // Alten Schließ-Timer zurücksetzen, falls er schon lief (damit er bei neuer Meldung wieder auf 10 Sek springt)
+      if (successCloseTimer) clearTimeout(successCloseTimer);
+      successCloseTimer = setTimeout(function() {
+        closeSuccessScreen();
+      }, 10000);
     };
 
     window.completeTimerEarly = function(child) {
@@ -985,16 +1007,18 @@
         childData.stars = (childData.stars || 0) + task.stars + 1;
         confetti({ particleCount: 100, spread: 80 });
       }
+      var completedTitle = t.title;
       t.remainingSeconds = 0;
       t.targetEndTime = null;
       t.itemId = null;
       saveStateToFirebase();
-      document.getElementById('timer-modal').style.display = 'none';
-      modalTimerChild = null;
+      
+      showSuccessScreen(child, completedTitle, task ? task.stars + 1 : 1);
       render();
     };
 
     window.minimizeTimer = function() {
+      if (successCloseTimer) clearTimeout(successCloseTimer);
       document.getElementById('timer-modal').style.display = 'none';
       modalTimerChild = null;
     };
@@ -1057,6 +1081,7 @@
     };
 
     window.closeSuccessScreen = function() {
+      if (successCloseTimer) clearTimeout(successCloseTimer);
       document.getElementById('timer-success-view').classList.add('hidden');
       document.getElementById('timer-running-view').classList.remove('hidden');
       document.getElementById('timer-modal').style.display = 'none';
