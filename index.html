@@ -669,13 +669,14 @@
         if (t && t.remainingSeconds > 0) {
           var progressPercent = ((t.totalSeconds - t.remainingSeconds) / t.totalSeconds) * 100;
           var remainingPercent = 100 - progressPercent;
-          container.innerHTML += '<div onclick="openTimerForChild(\'' + ch + '\')" style="background:#0f172a; color:#fff; padding:0.75rem; border-radius:1rem; border:2px solid ' + (ch === 'oskar' ? '#818cf8' : '#f472b6') + '; cursor:pointer; box-shadow:0 10px 15px -3px rgba(0,0,0,0.3);">' +
-            '<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; font-weight:700;">' +
+          
+          container.innerHTML += '<div onclick="openTimerForChild(\'' + ch + '\')" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 99; background: #0f172a; color: #fff; padding: 0.85rem 1.1rem; border-radius: 1rem; border: 2px solid ' + (ch === 'oskar' ? '#818cf8' : '#f472b6') + '; cursor: pointer; box-shadow: 0 15px 25px -5px rgba(0,0,0,0.4); min-width: 240px;">' +
+            '<div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700;">' +
               '<span>' + (ch === 'oskar' ? '👦 Oskar' : '👧 Irma') + ' • ' + t.title + '</span>' +
-              '<span style="color:#fbbf24; font-size:0.875rem;">' + Math.floor(t.remainingSeconds / 60) + ':' + (t.remainingSeconds % 60 < 10 ? '0' : '') + (t.remainingSeconds % 60) + '</span>' +
+              '<span style="color: #fbbf24; font-size: 0.95rem;">' + Math.floor(t.remainingSeconds / 60) + ':' + (t.remainingSeconds % 60 < 10 ? '0' : '') + (t.remainingSeconds % 60) + '</span>' +
             '</div>' +
-            '<div style="width:100%; background:#1e293b; height:0.5rem; border-radius:9999px; margin-top:0.5rem; overflow:hidden;">' +
-              '<div style="background:' + (remainingPercent < 20 ? '#dc2626' : (remainingPercent < 50 ? '#fbbf24' : '#22c55e')) + '; height:100%; width:' + remainingPercent + '%;"></div>' +
+            '<div style="width: 100%; background: #1e293b; height: 0.5rem; border-radius: 9999px; margin-top: 0.5rem; overflow: hidden;">' +
+              '<div style="background: ' + (remainingPercent < 20 ? '#dc2626' : (remainingPercent < 50 ? '#fbbf24' : '#22c55e')) + '; height: 100%; width: ' + remainingPercent + '%;"></div>' +
             '</div>' +
           '</div>';
         }
