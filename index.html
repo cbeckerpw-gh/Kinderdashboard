@@ -664,13 +664,25 @@
     function renderFloatingWidgets() {
       var container = document.getElementById('floating-timers-container');
       container.innerHTML = '';
+      
+      // Dem Container feste CSS-Eigenschaften für die untere rechte Ecke geben
+      container.style.position = 'fixed';
+      container.style.bottom = '1.5rem';
+      container.style.right = '1.5rem';
+      container.style.zIndex = '99';
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.gap = '0.75rem';
+      container.style.maxWidth = '20rem';
+      container.style.pointerEvents = 'none'; // Klicks durch den leeren Bereich durchlassen
+
       ['oskar', 'irma'].forEach(function(ch) {
         var t = activeTimers[ch];
         if (t && t.remainingSeconds > 0) {
           var progressPercent = ((t.totalSeconds - t.remainingSeconds) / t.totalSeconds) * 100;
           var remainingPercent = 100 - progressPercent;
           
-          container.innerHTML += '<div onclick="openTimerForChild(\'' + ch + '\')" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 99; background: #0f172a; color: #fff; padding: 0.85rem 1.1rem; border-radius: 1rem; border: 2px solid ' + (ch === 'oskar' ? '#818cf8' : '#f472b6') + '; cursor: pointer; box-shadow: 0 15px 25px -5px rgba(0,0,0,0.4); min-width: 240px;">' +
+          container.innerHTML += '<div onclick="openTimerForChild(\'' + ch + '\')" style="pointer-events: auto; background: #0f172a; color: #fff; padding: 0.85rem 1.1rem; border-radius: 1rem; border: 2px solid ' + (ch === 'oskar' ? '#818cf8' : '#f472b6') + '; cursor: pointer; box-shadow: 0 15px 25px -5px rgba(0,0,0,0.4); width: 100%;">' +
             '<div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700;">' +
               '<span>' + (ch === 'oskar' ? '👦 Oskar' : '👧 Irma') + ' • ' + t.title + '</span>' +
               '<span style="color: #fbbf24; font-size: 0.95rem;">' + Math.floor(t.remainingSeconds / 60) + ':' + (t.remainingSeconds % 60 < 10 ? '0' : '') + (t.remainingSeconds % 60) + '</span>' +
