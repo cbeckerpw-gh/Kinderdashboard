@@ -13,7 +13,7 @@
     }
     body {
       background-color: #f0f8ff;
-      padding: 15px;
+      padding: 10px;
       color: #333;
     }
     header {
@@ -21,61 +21,219 @@
       justify-content: space-between;
       align-items: center;
       background: #ffffff;
-      padding: 15px 25px;
-      border-radius: 20px;
+      padding: 12px 20px;
+      border-radius: 15px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
     h1 {
-      font-size: 1.8rem;
+      font-size: 1.5rem;
       color: #2c3e50;
     }
-    .legend {
+    .date-badge {
+      font-size: 1rem;
+      font-weight: bold;
+      background: #e0f7fa;
+      color: #00796b;
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .grid-days {
       display: flex;
-      gap: 15px;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .day-card {
+      background: white;
+      border-radius: 15px;
+      padding: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .day-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+      padding-bottom: 5px;
+      border-bottom: 2px dashed #eee;
+      color: #4f46e5;
+    }
+    .events-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .event-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 10px;
+      color: white;
       font-size: 1.1rem;
       font-weight: bold;
     }
-    .badge {
-      padding: 6px 14px;
-      border-radius: 12px;
-      color: white;
+    .oskar { background-color: #2196F3; }
+    .irma { background-color: #FF9800; }
+    .familie { background-color: #9C27B0; }
+    .time-text {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      display: block;
+      font-weight: normal;
     }
-    .oskar-badge { background-color: #2196F3; }
-    .irma-badge { background-color: #FF9800; }
-
-    .card {
-      background: white;
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      margin-bottom: 15px;
-    }
-    h2 {
-      color: #4f46e5;
-      margin-bottom: 10px;
-    }
-    p {
-      line-height: 1.5;
-      margin-bottom: 10px;
+    .no-events {
+      font-size: 1rem;
+      color: #888;
+      text-align: center;
+      padding: 10px;
+      font-style: italic;
     }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>Familienplaner (iPad)</h1>
-    <div class="legend">
-      <span class="badge oskar-badge">Oskar</span>
-      <span class="badge irma-badge">Irma</span>
-    </div>
+    <h1>Familienplaner 🗓️</h1>
+    <div class="date-badge" id="current-date">Lade...</div>
   </header>
 
-  <div class="card">
-    <h2>Status</h2>
-    <p>Die Legacy-Ansicht für das iPad Air läuft erfolgreich stabil.</p>
-    <p>Hier werden in den nächsten Schritten Ihre spezifischen Routinen, Aufgaben und Ansichten für Oskar und Irma geladen.</p>
+  <div class="grid-days">
+    <div class="day-card">
+      <div class="day-title">Heute ☀️</div>
+      <div class="events-list" id="events-day-0"></div>
+    </div>
+    <div class="day-card">
+      <div class="day-title">Morgen 🌥️</div>
+      <div class="events-list" id="events-day-1"></div>
+    </div>
+    <div class="day-card">
+      <div class="day-title">Übermorgen 📅</div>
+      <div class="events-list" id="events-day-2"></div>
+    </div>
   </div>
 
+  <script>
+    var icsUrl = 'https://calendar.google.com/calendar/ical/family15160420290140632345%40group.calendar.google.com/public/basic.ics';
+    var proxies = [
+      function(url) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url); },
+      function(url) { return 'https://corsproxy.io/?' + encodeURIComponent(url); }
+    ];
+
+    var options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+    document.getElementById('current-date').innerText = new Date().toLocaleDateString('de-DE', options);
+
+    function getPersonClass(title) {
+      var t = title.toLowerCase();
+      if (t.indexOf('oskar') !== -1) return 'oskar';
+      if (t.indexOf('irma') !== -1) return 'irma';
+      return 'familie';
+    }
+
+    function parseICS(icsData) {
+      var events = [];
+      var blocks = icsData.split('BEGIN:VEVENT');
+      
+      for (var i = 1; i < blocks.length; i++) {
+        var block = blocks[i].split('END:VEVENT')[0];
+        var summary = '';
+        var dtstart = '';
+        
+        var lines = block.split(/\r\n|\n|\r/);
+        for (var j = 0; j < lines.length; j++) {
+          var line = lines[j];
+          if (line.indexOf('SUMMARY:') === 0) {
+            summary = line.replace('SUMMARY:', '').trim();
+          }
+          if (line.indexOf('DTSTART') === 0) {
+            dtstart = line.split(':')[1].trim();
+          }
+        }
+        
+        if (summary && dtstart) {
+          var dateObj;
+          if (dtstart.length === 8) {
+            var year = parseInt(dtstart.substring(0, 4), 10);
+            var month = parseInt(dtstart.substring(4, 6), 10) - 1;
+            var day = parseInt(dtstart.substring(6, 8), 10);
+            dateObj = new Date(year, month, day);
+          } else {
+            var year = parseInt(dtstart.substring(0, 4), 10);
+            var month = parseInt(dtstart.substring(4, 6), 10) - 1;
+            var day = parseInt(dtstart.substring(6, 8), 10);
+            var hour = parseInt(dtstart.substring(9, 11), 10);
+            var min = parseInt(dtstart.substring(11, 13), 10);
+            dateObj = new Date(Date.UTC(year, month, day, hour, min));
+          }
+          events.push({ summary: summary, startDate: dateObj, isAllDay: dtstart.length === 8 });
+        }
+      }
+      return events;
+    }
+
+    function fetchICSWithProxy(proxyIndex, callback) {
+      if (proxyIndex >= proxies.length) {
+        console.error('Alle Proxies fehlgeschlagen');
+        return;
+      }
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', proxies[proxyIndex](icsUrl), true);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200 && xhr.responseText.indexOf('BEGIN:VCALENDAR') !== -1) {
+            callback(xhr.responseText);
+          } else {
+            fetchICSWithProxy(proxyIndex + 1, callback);
+          }
+        }
+      };
+      xhr.onerror = function() {
+        fetchICSWithProxy(proxyIndex + 1, callback);
+      };
+      xhr.send();
+    }
+
+    function updateCalendar() {
+      fetchICSWithProxy(0, function(icsData) {
+        var events = parseICS(icsData);
+        var now = new Date();
+        var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+
+        for (var i = 0; i < 3; i++) {
+          document.getElementById('events-day-' + i).innerHTML = '';
+        }
+
+        for (var k = 0; k < events.length; k++) {
+          var event = events[k];
+          var eventDate = new Date(event.startDate.getFullYear(), event.startDate.getMonth(), event.startDate.getDate());
+          var diffDays = Math.round((eventDate - todayStart) / (1000 * 60 * 60 * 24));
+
+          if (diffDays >= 0 && diffDays <= 2) {
+            renderEventCard(event.summary, event.startDate, event.isAllDay, diffDays);
+          }
+        }
+
+        for (var l = 0; l < 3; l++) {
+          var container = document.getElementById('events-day-' + l);
+          if (container.children.length === 0) {
+            container.innerHTML = '<div class="no-events">Keine Termine 🎉</div>';
+          }
+        }
+      });
+    }
+
+    function renderEventCard(summary, startDate, isAllDay, dayDiff) {
+      var container = document.getElementById('events-day-' + dayDiff);
+      var timeStr = isAllDay ? 'Ganztägig' : startDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+      var colorClass = getPersonClass(summary);
+
+      var card = document.createElement('div');
+      card.className = 'event-card ' + colorClass;
+      card.innerHTML = '<div><span>' + summary + '</span><span class="time-text">' + timeStr + '</span></div>';
+      container.appendChild(card);
+    }
+
+    updateCalendar();
+    setInterval(updateCalendar, 10 * 60 * 1000);
+  </script>
 </body>
 </html>
