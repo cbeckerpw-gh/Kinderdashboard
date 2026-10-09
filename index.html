@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Routine & Sterne - Oskar & Irma (iPad Legacy)</title>
   <link rel="icon" type="image/png" href="./favicon.png">
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Google Fonts Inter & Fredoka -->
@@ -14,11 +13,13 @@
   <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-  <!-- Firebase v8 (iOS 12 Kompatibel via Script Tags statt ES Modules) -->
+  <!-- Firebase v8 (iOS 12 Kompatibel via Script Tags) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <style>
+    /* STABILES EIGENES CSS FÜR iOS 12 (Repliziert exakt das Tailwind-Design) */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Inter', sans-serif;
       background-color: #fcfbf7;
@@ -26,10 +27,153 @@
       touch-action: manipulation;
       user-select: none;
       -webkit-user-select: none;
+      padding: 15px;
+      max-width: 72rem;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
-    .font-heading {
-      font-family: 'Fredoka', cursive, sans-serif;
+    .font-heading { font-family: 'Fredoka', cursive, sans-serif; }
+    
+    /* Layout & Flex / Grid Helpers */
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .flex-wrap { flex-wrap: wrap; }
+    .items-center { align-items: center; }
+    .items-start { align-items: flex-start; }
+    .justify-between { justify-content: space-between; }
+    .justify-center { justify-content: center; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .gap-4 { gap: 1rem; }
+    .space-y-4 > * + * { margin-top: 1rem; }
+    .space-y-6 > * + * { margin-top: 1.5rem; }
+    .space-x-2 > * + * { margin-left: 0.5rem; }
+    .space-x-3 > * + * { margin-left: 0.75rem; }
+    
+    .grid { display: grid; }
+    .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (min-width: 768px) {
+      .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
+
+    /* Komponenten-Styling */
+    header, .card, section, div[id*="view-"] {
+      background: #ffffff;
+    }
+    header {
+      border-radius: 1.5rem;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      border: 1px solid #fef3c7;
+    }
+    .bg-white { background-color: #ffffff; }
+    .bg-slate-50 { background-color: #f8fafc; }
+    .bg-slate-100 { background-color: #f1f5f9; }
+    .bg-amber-50 { background-color: #fffbeb; }
+    .bg-amber-100 { background-color: #fef3c7; }
+    .bg-amber-400 { background-color: #fbbf24; }
+    .bg-amber-500 { background-color: #f59e0b; }
+    .bg-indigo-50 { background-color: #eef2ff; }
+    .bg-indigo-600 { background-color: #4f46e5; }
+    .bg-pink-500 { background-color: #ec4899; }
+    .bg-green-500 { background-color: #22c55e; }
+    .bg-green-100 { background-color: #dcfce7; }
+    .bg-red-50 { background-color: #fef2f2; }
+
+    .text-white { color: #ffffff; }
+    .text-slate-300 { color: #cbd5e1; }
+    .text-slate-400 { color: #94a3b8; }
+    .text-slate-600 { color: #475569; }
+    .text-slate-700 { color: #334155; }
+    .text-slate-800 { color: #1e293b; }
+    .text-amber-500 { color: #f59e0b; }
+    .text-amber-600 { color: #d97706; }
+    .text-amber-800 { color: #92400e; }
+    .text-indigo-600 { color: #4f46e5; }
+    .text-green-700 { color: #15803d; }
+    .text-red-600 { color: #dc2626; }
+    
+    .font-bold { font-weight: 700; }
+    .font-black { font-weight: 900; }
+    .font-semibold { font-weight: 600; }
+    .text-xs { font-size: 0.75rem; }
+    .text-sm { font-size: 0.875rem; }
+    .text-base { font-size: 1rem; }
+    .text-lg { font-size: 1.125rem; }
+    .text-xl { font-size: 1.25rem; }
+    .text-2xl { font-size: 1.5rem; }
+    .text-3xl { font-size: 1.875rem; }
+    .text-4xl { font-size: 2.25rem; }
+    .text-6xl { font-size: 3.75rem; }
+
+    .rounded-xl { border-radius: 0.75rem; }
+    .rounded-2xl { border-radius: 1rem; }
+    .rounded-3xl { border-radius: 1.5rem; }
+    .rounded-full { border-radius: 9999px; }
+
+    .p-1\.5 { padding: 0.375rem; }
+    .p-3 { padding: 0.75rem; }
+    .p-4 { padding: 1rem; }
+    .p-5 { padding: 1.25rem; }
+    .p-6 { padding: 1.5rem; }
+    .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+    .py-1\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+    .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .py-2\.5 { padding-top: 0.625rem; padding-bottom: 0.625rem; }
+    .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+    .py-3\.5 { padding-top: 0.875rem; padding-bottom: 0.875rem; }
+    .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+    .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+    .px-2\.5 { padding-left: 0.625rem; padding-right: 0.625rem; }
+    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .px-4 { padding-left: 1rem; padding-right: 1rem; }
+    .px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
+
+    .border { border: 1px solid #e2e8f0; }
+    .border-2 { border-width: 2px; }
+    .border-slate-200 { border-color: #e2e8f0; }
+    .border-amber-100 { border-color: #fef3c7; }
+    .border-amber-200 { border-color: #fde68a; }
+    .border-amber-300 { border-color: #fcd34d; }
+    .border-indigo-100 { border-color: #e0e7ff; }
+    .border-indigo-200 { border-color: #c7d2fe; }
+    .border-green-200 { border-color: #bbf7d0; }
+    .border-red-200 { border-color: #fecaca; }
+
+    .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+    .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+    
+    .transition { transition: all 0.2s ease; }
+    .relative { position: relative; }
+    .absolute { position: absolute; }
+    .fixed { position: fixed; }
+    .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+    .z-45 { z-index: 45; }
+    .z-50 { z-index: 50; }
+    .hidden { display: none !important; }
+    .w-full { width: 100%; }
+    .max-w-xs { max-width: 20rem; }
+    .max-w-sm { max-width: 24rem; }
+    .w-12 { width: 3rem; }
+    .h-12 { height: 3rem; }
+    .w-48 { width: 12rem; }
+    .h-48 { height: 12rem; }
+    .w-3 { width: 0.75rem; }
+    .h-3 { height: 0.75rem; }
+    .w-2\.5 { width: 0.625rem; }
+    .h-2.5 { height: 0.625rem; }
+    .mx-auto { margin-left: auto; margin-right: auto; }
+    .text-center { text-align: center; }
+    .overflow-hidden { overflow: hidden; }
+    .cursor-pointer { cursor: pointer; }
+    .pointer-events-none { pointer-events: none; }
+    .pointer-events-auto { pointer-events: auto; }
+    .line-through { text-decoration: line-through; }
+
     .timer-ring-circle {
       transition: stroke-dashoffset 0.3s linear;
       transform: rotate(-90deg);
@@ -51,10 +195,10 @@
     }
   </style>
 </head>
-<body class="min-h-screen p-4 md:p-8 flex flex-col justify-between max-w-6xl mx-auto">
+<body>
 
   <!-- Parallele Floating Widgets für Oskar & Irma -->
-  <div id="floating-timers-container" class="fixed bottom-4 right-4 flex flex-col gap-3 z-40 max-w-xs w-full pointer-events-none px-4 sm:px-0"></div>
+  <div id="floating-timers-container" class="fixed bottom-4 right-4 flex flex-col gap-3 z-45 max-w-xs w-full pointer-events-none px-4 sm:px-0"></div>
 
   <!-- Main Container -->
   <div class="space-y-6 w-full">
@@ -89,16 +233,16 @@
 
     <!-- Modus Tabs (Morgen, Tag, Abend, Shop) -->
     <nav class="flex flex-wrap gap-2 md:gap-3">
-      <button onclick="switchTab('morgen')" id="tab-morgen" class="px-5 py-3 rounded-2xl font-bold font-heading text-base transition flex items-center space-x-2 bg-indigo-600 text-white shadow-md">
+      <button onclick="switchTab('morgen')" id="tab-morgen" class="px-5 py-3 rounded-2xl font-bold font-heading text-base transition flex items-center space-x-2 bg-indigo-600 text-white shadow-sm">
         <span>🌅 Morgen</span>
       </button>
-      <button onclick="switchTab('tag')" id="tab-tag" class="px-5 py-3 rounded-2xl font-bold font-heading text-base transition flex items-center space-x-2 bg-white text-slate-600 hover:bg-slate-50 shadow-sm border border-slate-200">
+      <button onclick="switchTab('tag')" id="tab-tag" class="px-5 py-3 rounded-2xl font-bold font-heading text-base transition flex items-center space-x-2 bg-white text-slate-600 border border-slate-200">
         <span>☀️ Tag</span>
       </button>
-      <button onclick="switchTab('abend')" id="tab-abend" class="px-5 py-3 rounded-2xl font-bold font-heading text-base transition flex items-center space-x-2 bg-white text-slate-600 hover:bg-slate-50 shadow-sm border border-slate-200">
+      <button onclick="switchTab('abend')" id="tab-abend" class="px-5 py-3 rounded-2xl font-bold font-heading text-base transition flex items-center space-x-2 bg-white text-slate-600 border border-slate-200">
         <span>🌙 Abend</span>
       </button>
-      <button onclick="switchTab('belohnungen')" id="tab-belohnungen" class="px-5 py-3 rounded-2xl font-bold font-heading text-base transition flex items-center space-x-2 bg-white text-slate-600 hover:bg-slate-50 shadow-sm border border-slate-200">
+      <button onclick="switchTab('belohnungen')" id="tab-belohnungen" class="px-5 py-3 rounded-2xl font-bold font-heading text-base transition flex items-center space-x-2 bg-white text-slate-600 border border-slate-200">
         <span>🎁 Belohnungen & Shop</span>
       </button>
     </nav>
@@ -122,18 +266,18 @@
         </div>
         <div class="flex items-center space-x-2">
           <span class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-bold">Bearbeitungsmodus</span>
-          <button onclick="lockParentMode()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center gap-1 border border-slate-200">
+          <button onclick="lockParentMode()" class="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl flex items-center gap-2 border border-slate-200">
             <i class="fa-solid fa-lock"></i> Sperren
           </button>
         </div>
       </div>
 
-      <!-- Profil-Status (Kindergarten / Schule) -->
+      <!-- Profil-Status -->
       <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100 space-y-4">
         <h3 class="font-bold text-slate-800 font-heading text-base flex items-center gap-2">
           <i class="fa-solid fa-graduation-cap text-indigo-600"></i> Kind-Profil (Schule vs. Kindergarten)
         </h3>
-        <p class="text-xs text-slate-500">Wenn du hier auf Schulkind umschaltest, werden Schulaufgaben sofort für das Kind aktiviert – ohne Punkteverlust!</p>
+        <p class="text-xs text-slate-400">Wenn du hier auf Schulkind umschaltest, werden Schulaufgaben sofort für das Kind aktiviert – ohne Punkteverlust!</p>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between">
@@ -153,131 +297,18 @@
           </div>
         </div>
       </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Neue Aufgabe hinzufügen -->
-        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
-          <h3 class="font-bold text-slate-800 font-heading text-base flex items-center gap-2">
-            <span class="text-indigo-600">+</span> Neue Aufgabe hinzufügen
-          </h3>
-          <div class="space-y-3 text-sm">
-            <input type="text" id="new-task-title" placeholder="Aufgabenname (z.B. Zähne putzen)" class="w-full p-3 rounded-xl border border-slate-200">
-            
-            <div class="grid grid-cols-2 gap-2">
-              <select id="new-task-child" class="p-3 rounded-xl border border-slate-200 font-semibold text-slate-700">
-                <option value="both">👥 Für Beide</option>
-                <option value="oskar">👦 Nur Oskar</option>
-                <option value="irma">👧 Nur Irma</option>
-              </select>
-              <select id="new-task-category" class="p-3 rounded-xl border border-slate-200 font-semibold text-slate-700">
-                <option value="morgen">🌅 Morgen</option>
-                <option value="tag">☀️ Tag</option>
-                <option value="abend">🌙 Abend</option>
-              </select>
-            </div>
-
-            <div class="flex gap-2">
-              <input type="text" id="new-task-icon" placeholder="Emoji (z.B. 🦷)" value="🦷" class="w-1/3 p-3 rounded-xl border border-slate-200 text-center text-lg">
-              <input type="number" id="new-task-stars" placeholder="Sterne" value="1" min="1" class="w-1/3 p-3 rounded-xl border border-slate-200">
-              <input type="number" id="new-task-minutes" placeholder="Minuten" min="0" class="w-1/3 p-3 rounded-xl border border-slate-200">
-            </div>
-
-            <div class="space-y-1">
-              <span class="text-xs font-bold text-slate-400">Schnellzugriff Icons:</span>
-              <div class="flex gap-1.5 flex-wrap">
-                <button onclick="selectIcon('🦷', 'task')" class="px-2 py-1 bg-white rounded-lg border text-base">🦷</button>
-                <button onclick="selectIcon('👕', 'task')" class="px-2 py-1 bg-white rounded-lg border text-base">👕</button>
-                <button onclick="selectIcon('👟', 'task')" class="px-2 py-1 bg-white rounded-lg border text-base">👟</button>
-                <button onclick="selectIcon('🥣', 'task')" class="px-2 py-1 bg-white rounded-lg border text-base">🥣</button>
-                <button onclick="selectIcon('🎒', 'task')" class="px-2 py-1 bg-white rounded-lg border text-base">🎒</button>
-                <button onclick="selectIcon('🧹', 'task')" class="px-2 py-1 bg-white rounded-lg border text-base">🧹</button>
-                <button onclick="selectIcon('📚', 'task')" class="px-2 py-1 bg-white rounded-lg border text-base">📚</button>
-                <button onclick="selectIcon('🛏️', 'task')" class="px-2 py-1 bg-white rounded-lg border text-base">🛏️</button>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-2 pt-1">
-              <input type="checkbox" id="new-task-allow-early" class="w-4 h-4 rounded text-indigo-600" checked>
-              <label for="new-task-allow-early" class="text-xs font-semibold text-slate-600">Frühzeitiges "Fertig"-Melden erlauben (mit Bonus-Stern)</label>
-            </div>
-
-            <button onclick="addTask()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition font-heading">
-              Aufgabe Speichern
-            </button>
-          </div>
-        </div>
-
-        <!-- Neue Belohnung hinzufügen -->
-        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
-          <h3 class="font-bold text-slate-800 font-heading text-base flex items-center gap-2">
-            <span class="text-amber-500">🎁</span> Neue Belohnung hinzufügen
-          </h3>
-          <div class="space-y-3 text-sm">
-            <input type="text" id="new-reward-title" placeholder="Belohnungsname (z.B. 20 Min. TV Zeit)" class="w-full p-3 rounded-xl border border-slate-200">
-            
-            <div class="grid grid-cols-2 gap-2">
-              <select id="new-reward-child" class="p-3 rounded-xl border border-slate-200 font-semibold text-slate-700">
-                <option value="both">👥 Für Beide</option>
-                <option value="oskar">👦 Für Oskar</option>
-                <option value="irma">👧 Für Irma</option>
-              </select>
-              <input type="number" id="new-reward-cost" placeholder="Sterne Kosten" value="5" min="1" class="p-3 rounded-xl border border-slate-200">
-            </div>
-
-            <div class="flex gap-2">
-              <input type="text" id="new-reward-icon" placeholder="Emoji (z.B. 📺)" value="🎁" class="w-1/3 p-3 rounded-xl border border-slate-200 text-center text-lg">
-              <input type="number" id="new-reward-minutes" placeholder="Timer Minuten (Optional)" min="0" class="w-2/3 p-3 rounded-xl border border-slate-200">
-            </div>
-
-            <div class="space-y-1">
-              <span class="text-xs font-bold text-slate-400">Schnellzugriff Icons:</span>
-              <div class="flex gap-1.5 flex-wrap">
-                <button onclick="selectIcon('👨', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-xs font-bold">👨 Papa</button>
-                <button onclick="selectIcon('👩', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-xs font-bold">👩 Mama</button>
-                <button onclick="selectIcon('👩‍👨', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-xs font-bold">👩‍👨 Elternduo</button>
-                <button onclick="selectIcon('📺', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-xs font-bold">📺 TV</button>
-                <button onclick="selectIcon('🍬', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base" title="Süßigkeiten">🍬</button>
-                <button onclick="selectIcon('🏊‍♂️', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base" title="Schwimmen">🏊‍♂️</button>
-                <button onclick="selectIcon('🚲', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base" title="Fahrradfahren">🚲</button>
-                <button onclick="selectIcon('🧱', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base">🧱</button>
-                <button onclick="selectIcon('🍦', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base">🍦</button>
-                <button onclick="selectIcon('🛝', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base">🛝</button>
-                <button onclick="selectIcon('🎲', 'reward')" class="px-2.5 py-1 bg-white rounded-lg border text-base">🎲</button>
-              </div>
-            </div>
-
-            <button onclick="addReward()" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-sm transition font-heading">
-              Belohnung Speichern
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="pt-4 border-t border-slate-100 flex flex-wrap gap-3 justify-between items-center">
-        <div class="flex gap-2">
-          <button onclick="resetDailyTasks()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs border border-slate-200">
-            🔄 Tagesaufgaben manuell zurücksetzen
-          </button>
-          <button onclick="resetToDefaults()" class="px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-xl text-xs border border-amber-200">
-            ✨ Anwendung & Punkte komplett zurücksetzen
-          </button>
-        </div>
-        <button onclick="clearAllData()" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-xs border border-red-200">
-          ⚠️ Alle Daten löschen
-        </button>
-      </div>
     </section>
 
   </div>
 
   <!-- PIN Modal -->
-  <div id="pin-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+  <div id="pin-modal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50" style="background: rgba(15,23,42,0.6);">
     <div class="bg-white rounded-3xl p-6 max-w-xs w-full text-center space-y-4 shadow-2xl">
       <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-xl">
         <i class="fa-solid fa-user-shield"></i>
       </div>
       <h3 class="text-lg font-bold font-heading text-slate-800">Elternbereich PIN</h3>
-      <p class="text-xs text-slate-500">Bitte gib deinen PIN ein (Standard: 1234)</p>
+      <p class="text-xs text-slate-400">Bitte gib deinen PIN ein (Standard: 1234)</p>
       <input type="password" id="pin-input" maxlength="4" placeholder="••••" class="text-center text-3xl font-bold tracking-widest p-3 border-2 border-indigo-200 rounded-2xl w-full">
       <div class="grid grid-cols-2 gap-2 pt-2">
         <button onclick="closePinModal()" class="py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl text-sm">Abbrechen</button>
@@ -287,21 +318,21 @@
   </div>
 
   <!-- Fullscreen Timer Modal -->
-  <div id="timer-modal" onclick="handleTimerBackdropClick(event)" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
+  <div id="timer-modal" onclick="handleTimerBackdropClick(event)" class="fixed inset-0 hidden flex items-center justify-center p-4 z-50" style="background: rgba(15,23,42,0.7);">
     <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center space-y-6 shadow-2xl relative">
       
       <!-- Timer Header -->
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
         <div class="flex items-center space-x-2">
           <span id="timer-child-badge" class="text-xs bg-indigo-100 text-indigo-700 font-bold px-2.5 py-1 rounded-lg">👦 Oskar</span>
-          <span id="timer-title" class="font-bold font-heading text-slate-800 text-base truncate max-w-[140px]">Timer</span>
+          <span id="timer-title" class="font-bold font-heading text-slate-800 text-base">Timer</span>
         </div>
-        <button onclick="minimizeTimer()" class="text-slate-400 hover:text-slate-600 p-2 text-xl" title="Minimieren">
+        <button onclick="minimizeTimer()" class="text-slate-400 p-2 text-xl" title="Minimieren">
           <i class="fa-solid fa-window-minimize"></i>
         </button>
       </div>
 
-      <!-- TIMER ZUSTAND: Laufender Timer -->
+      <!-- TIMER ZUSTAND -->
       <div id="timer-running-view" class="space-y-6">
         <div class="relative w-48 h-48 mx-auto flex items-center justify-center">
           <svg class="w-full h-full" viewBox="0 0 192 192">
@@ -314,12 +345,12 @@
         </div>
 
         <div class="flex flex-col gap-2">
-          <button id="timer-early-btn" onclick="completeTimerEarly()" class="w-full py-3.5 bg-green-500 hover:bg-green-600 text-white font-bold font-heading rounded-2xl shadow-sm transition text-lg flex items-center justify-center gap-2">
+          <button id="timer-early-btn" onclick="completeTimerEarly()" class="w-full py-3.5 bg-green-500 text-white font-bold font-heading rounded-2xl shadow-sm text-lg flex items-center justify-center gap-2">
             <span>✨ Fertig!</span>
           </button>
           
           <div class="grid grid-cols-2 gap-2">
-            <button onclick="toggleTimerPause()" id="timer-pause-btn" class="py-2.5 bg-indigo-600 text-white font-bold font-heading rounded-2xl shadow-sm text-sm">
+            <button onclick="toggleTimerPause()" id="timer-pause-btn" class="py-2.5 bg-indigo-600 text-white font-bold font-heading rounded-2xl text-sm">
               Pause
             </button>
             <button onclick="cancelCurrentTimer()" class="py-2.5 bg-slate-100 text-slate-600 font-bold font-heading rounded-2xl text-sm">
@@ -329,20 +360,14 @@
         </div>
       </div>
 
-      <!-- TIMER ZUSTAND: Visueller Erfolgs-Bildschirm -->
+      <!-- ERFOLGS-BILDCHIRM -->
       <div id="timer-success-view" class="hidden space-y-5 py-2">
         <div class="text-6xl bounce-hero" id="success-icon">🏆</div>
         <div class="space-y-1">
           <h3 id="success-headline" class="text-2xl font-black font-heading text-slate-800">SUPER GEMACHT!</h3>
           <p id="success-subline" class="text-amber-600 font-bold text-lg font-heading">+1 STERN ERHALTEN! ⭐</p>
         </div>
-
-        <div id="bonus-badge" class="hidden bg-amber-100 border-2 border-amber-300 p-3 rounded-2xl text-amber-900 font-bold text-sm flex items-center justify-center gap-2">
-          <span>🚀 SUPER SCHNELL!</span>
-          <span>+1 BONUS-STERN! ⭐</span>
-        </div>
-
-        <button onclick="closeSuccessScreen()" class="w-full py-4 bg-amber-400 hover:bg-amber-500 text-slate-900 font-black font-heading rounded-2xl text-xl shadow-md transition">
+        <button onclick="closeSuccessScreen()" class="w-full py-4 bg-amber-400 text-slate-900 font-black font-heading rounded-2xl text-xl shadow-md">
           SUPER! 🎉
         </button>
       </div>
@@ -350,7 +375,7 @@
     </div>
   </div>
 
-  <!-- FIREBASE INTEGRATION VIA CLASSIC SCRIPTS (iOS 12 COMPATIBLE) -->
+  <!-- FIREBASE & LOGIK -->
   <script>
     var PARENT_PIN = "1234";
     var isParentUnlocked = false;
@@ -428,9 +453,7 @@
         for (var i = 0; i < tasks.length; i++) {
           if (tasks[i].id === ct.id) found = true;
         }
-        if (!found) {
-          tasks.push(ct);
-        }
+        if (!found) tasks.push(ct);
       });
 
       return tasks;
@@ -495,12 +518,6 @@
       setInterval(updateTimersTick, 1000);
     });
 
-    document.addEventListener('visibilitychange', function() {
-      if (!document.hidden) {
-        updateTimersTick();
-      }
-    });
-
     window.switchChild = function(child) {
       activeChild = child;
       document.getElementById('child-btn-oskar').className = child === 'oskar' 
@@ -535,21 +552,12 @@
         var gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
-
         if (type === 'success') {
           osc.frequency.setValueAtTime(523.25, ctx.currentTime);
           osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3);
           gain.gain.setValueAtTime(0.3, ctx.currentTime);
           gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.3);
-        } else if (type === 'complete') {
-          osc.frequency.setValueAtTime(440, ctx.currentTime);
-          osc.frequency.setValueAtTime(880, ctx.currentTime + 0.2);
-          gain.gain.setValueAtTime(0.3, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.5);
+          osc.start(); osc.stop(ctx.currentTime + 0.3);
         }
       } catch (e) {}
     }
@@ -597,81 +605,55 @@
 
           var canAllowEarly = task.allowEarly !== false;
 
-          return '<div class="bg-white rounded-3xl p-5 shadow-sm border-2 transition-all relative overflow-hidden flex flex-col justify-between ' + (isTimerActive ? 'border-amber-400 active-card-pulse' : (isCompleted ? 'border-green-300 bg-green-50/30' : 'border-slate-100')) + '">' +
-            '<div class="flex items-start justify-between space-x-3 mb-4">' +
-              '<div class="flex items-center space-x-3">' +
-                '<div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-2xl">' + task.icon + '</div>' +
+          return '<div class="bg-white rounded-3xl p-5 shadow-sm border-2 transition-all relative overflow-hidden flex flex-col justify-between ' + (isTimerActive ? 'border-amber-400 active-card-pulse' : (isCompleted ? 'border-green-300 bg-green-50/30' : 'border-slate-100')) + '" style="border-color: ' + (isTimerActive ? '#fbbf24' : (isCompleted ? '#bbf7d0' : '#f1f5f9')) + '; border-width: 2px; border-style: solid; border-radius: 1.5rem; padding: 1.25rem; margin-bottom: 1rem; background: #fff;">' +
+            '<div class="flex items-start justify-between space-x-3 mb-4" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">' +
+              '<div class="flex items-center space-x-3" style="display:flex; align-items:center; gap:0.75rem;">' +
+                '<div style="width:3rem; height:3rem; background:#fffbeb; border-radius:1rem; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">' + task.icon + '</div>' +
                 '<div>' +
-                  '<h3 class="font-bold font-heading text-base text-slate-800 ' + (isCompleted ? 'line-through text-slate-400' : '') + '">' + task.title + '</h3>' +
-                  '<div class="flex items-center space-x-2 text-xs mt-1 font-medium">' +
-                    '<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-lg font-bold">⭐ ' + task.stars + ' ' + (task.stars === 1 ? 'Stern' : 'Sterne') + '</span>' +
-                    (task.minutes ? '<span class="text-slate-400">⏱️ ' + task.minutes + ' Min</span>' : '') +
+                  '<h3 style="font-weight:700; font-size:1rem; color:#1e293b; ' + (isCompleted ? 'text-decoration:line-through; color:#94a3b8;' : '') + '">' + task.title + '</h3>' +
+                  '<div style="display:flex; gap:0.5rem; font-size:0.75rem; margin-top:0.25rem; font-weight:600;">' +
+                    '<span style="background:#fef3c7; color:#92400e; padding:0.125rem 0.5rem; border-radius:0.5rem;">⭐ ' + task.stars + ' ' + (task.stars === 1 ? 'Stern' : 'Sterne') + '</span>' +
+                    (task.minutes ? '<span style="color:#94a3b8;">⏱️ ' + task.minutes + ' Min</span>' : '') +
                   '</div>' +
                 '</div>' +
-              '</div>' +
-              '<div class="flex items-center space-x-1">' +
-                (isParentUnlocked && isCompleted ? '<button onclick="parentUnlockTask(\'' + activeChild + '\', \'' + task.id + '\')" class="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-amber-300" title="Entsperren"><i class="fa-solid fa-unlock"></i> Entsperren</button>' : '') +
-                (isParentUnlocked ? '<button onclick="deleteItem(\'task\', \'' + task.id + '\')" class="text-slate-300 hover:text-red-500 p-1 text-sm transition" title="Löschen"><i class="fa-solid fa-trash-can"></i></button>' : '') +
               '</div>' +
             '</div>' +
             '<div>' +
               (isTimerActive ? 
-                '<div class="space-y-3">' +
-                  '<div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">' +
-                    '<div class="' + barColor + ' h-full transition-all duration-300" style="width: ' + remainingPercent + '%"></div>' +
+                '<div style="display:flex; flex-direction:column; gap:0.75rem;">' +
+                  '<div style="width:100%; background:#f1f5f9; height:0.75rem; border-radius:9999px; overflow:hidden; border:1px solid #e2e8f0;">' +
+                    '<div style="background:' + (remainingPercent < 20 ? '#dc2626' : (remainingPercent < 50 ? '#fbbf24' : '#22c55e')) + '; height:100%; width:' + remainingPercent + '%; transition:width 0.3s;"></div>' +
                   '</div>' +
-                  '<div class="flex gap-2">' +
-                    '<button onclick="openTimerForChild(\'' + activeChild + '\')" class="flex-1 py-3 bg-slate-900 text-amber-400 font-black font-heading rounded-2xl shadow-sm flex items-center justify-center space-x-2"><span>⏱️ ' + formatTime(childTimer.remainingSeconds) + '</span></button>' +
-                    (canAllowEarly ? '<button onclick="completeTimerEarly(\'' + activeChild + '\')" class="px-5 py-3 bg-green-500 hover:bg-green-600 text-white font-bold font-heading rounded-2xl shadow-sm transition">Fertig! 🎉</button>' : '') +
+                  '<div style="display:flex; gap:0.5rem;">' +
+                    '<button onclick="openTimerForChild(\'' + activeChild + '\')" style="flex:1; padding:0.75rem; background:#0f172a; color:#fbbf24; font-weight:900; border-radius:1rem; border:none; cursor:pointer;">⏱️ ' + formatTime(childTimer.remainingSeconds) + '</button>' +
+                    (canAllowEarly ? '<button onclick="completeTimerEarly(\'' + activeChild + '\')" style="padding:0.75rem 1.25rem; background:#22c55e; color:#fff; font-weight:700; border-radius:1rem; border:none; cursor:pointer;">Fertig! 🎉</button>' : '') +
                   '</div>' +
                 '</div>' 
               : (isCompleted ? 
-                '<div class="w-full py-3 bg-green-100 text-green-700 font-bold font-heading rounded-2xl flex items-center justify-center space-x-2 border border-green-200"><i class="fa-solid fa-check"></i><span>Erledigt für heute!</span></div>' 
+                '<div style="width:100%; padding:0.75rem; background:#dcfce7; color:#15803d; font-weight:700; border-radius:1rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; border:1px solid #bbf7d0;"><i class="fa-solid fa-check"></i><span>Erledigt für heute!</span></div>' 
               : (task.minutes ? 
-                '<button onclick="startTimer(\'' + activeChild + '\',' + task.minutes + ', \'' + task.title + '\', \'' + task.icon + '\', \'' + task.id + '\',' + canAllowEarly + ')" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold font-heading rounded-2xl shadow-sm transition">Starten (' + task.minutes + ' Min)</button>' 
-              : '<button onclick="toggleTask(\'' + task.id + '\')" class="w-full py-3 bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold font-heading rounded-2xl shadow-sm transition">Erledigen!</button>'))) +
+                '<button onclick="startTimer(\'' + activeChild + '\',' + task.minutes + ', \'' + task.title + '\', \'' + task.icon + '\', \'' + task.id + '\',' + canAllowEarly + ')" style="width:100%; padding:0.75rem; background:#4f46e5; color:#fff; font-weight:700; border-radius:1rem; border:none; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05);">Starten (' + task.minutes + ' Min)</button>' 
+              : '<button onclick="toggleTask(\'' + task.id + '\')" style="width:100%; padding:0.75rem; background:#fbbf24; color:#1e293b; font-weight:700; border-radius:1rem; border:none; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05);">Erledigen!</button>'))) +
             '</div>' +
           '</div>';
-        }).join('') : '<p class="text-center text-slate-400 col-span-2 py-8 font-medium">Keine Aufgaben in dieser Kategorie.</p>';
+        }).join('') : '<p style="text-align:center; color:#94a3b8; padding:2rem; grid-column:span 2;">Keine Aufgaben in dieser Kategorie.</p>';
       }
 
       if (currentTab === 'belohnungen') {
         var filteredRewards = (dbData.rewards || []).filter(function(r) { return r.child === 'both' || r.child === activeChild; });
-        
         rewardList.innerHTML = filteredRewards.map(function(reward) {
           var canAfford = childData.stars >= reward.cost;
-          var childTimer = activeTimers[activeChild];
-          var isTimerActive = childTimer.itemId === reward.id && childTimer.remainingSeconds > 0;
-          
-          var progressPercent = isTimerActive ? ((childTimer.totalSeconds - childTimer.remainingSeconds) / childTimer.totalSeconds) * 100 : 0;
-          var remainingPercent = 100 - progressPercent;
-
-          var barColor = 'bg-green-500';
-          if (remainingPercent < 50) barColor = 'bg-amber-400';
-          if (remainingPercent < 20) barColor = 'bg-red-500';
-
-          return '<div class="bg-white rounded-3xl p-5 shadow-sm border-2 relative overflow-hidden flex flex-col justify-between ' + (isTimerActive ? 'border-amber-400 active-card-pulse' : 'border-slate-100') + '">' +
-            '<div class="flex items-start justify-between space-x-3 mb-4">' +
-              '<div class="flex items-center space-x-3">' +
-                '<div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-2xl">' + reward.icon + '</div>' +
-                '<div>' +
-                  '<h3 class="font-bold font-heading text-base text-slate-800">' + reward.title + '</h3>' +
-                  '<div class="flex items-center space-x-2 text-xs mt-1 font-medium">' +
-                    '<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-lg font-bold">⭐ ' + reward.cost + ' Sterne</span>' +
-                    (reward.minutes ? '<span class="text-slate-400">⏱️ ' + reward.minutes + ' Min</span>' : '') +
-                  '</div>' +
+          return '<div style="background:#fff; border:2px solid #f1f5f9; border-radius:1.5rem; padding:1.25rem; margin-bottom:1rem; display:flex; flex-direction:column; justify-content:space-between;">' +
+            '<div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem;">' +
+              '<div style="width:3rem; height:3rem; background:#fffbeb; border-radius:1rem; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">' + reward.icon + '</div>' +
+              '<div>' +
+                '<h3 style="font-weight:700; font-size:1rem; color:#1e293b;">' + reward.title + '</h3>' +
+                '<div style="display:flex; gap:0.5rem; font-size:0.75rem; margin-top:0.25rem; font-weight:600;">' +
+                  '<span style="background:#fef3c7; color:#92400e; padding:0.125rem 0.5rem; border-radius:0.5rem;">⭐ ' + reward.cost + ' Sterne</span>' +
                 '</div>' +
               '</div>' +
-              (isParentUnlocked ? '<button onclick="deleteItem(\'reward\', \'' + reward.id + '\')" class="text-slate-300 hover:text-red-500 p-1 text-sm transition"><i class="fa-solid fa-trash-can"></i></button>' : '') +
             '</div>' +
-            '<div>' +
-              (isTimerActive ? 
-                '<div class="space-y-3">' +
-                  '<div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200"><div class="' + barColor + ' h-full transition-all duration-300" style="width: ' + remainingPercent + '%"></div></div>' +
-                  '<button onclick="openTimerForChild(\'' + activeChild + '\')" class="w-full py-3 bg-slate-900 text-amber-400 font-black font-heading rounded-2xl shadow-sm flex items-center justify-center space-x-2"><span>⏱️ Timer läuft: ' + formatTime(childTimer.remainingSeconds) + '</span></button>' +
-                '</div>' 
-              : '<button onclick="claimReward(\'' + reward.id + '\')" ' + (!canAfford ? 'disabled' : '') + ' class="w-full py-3 rounded-2xl font-bold font-heading transition shadow-sm ' + (canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed') + '">' + (canAfford ? '🎉 Einlösen!' : 'Zu wenig Sterne') + '</button>') +
-            '</div>' +
+            '<button onclick="claimReward(\'' + reward.id + '\')" ' + (!canAfford ? 'disabled' : '') + ' style="width:100%; padding:0.75rem; border-radius:1rem; font-weight:700; border:none; cursor:' + (canAfford ? 'pointer' : 'not-allowed') + '; background:' + (canAfford ? '#f59e0b' : '#f1f5f9') + '; color:' + (canAfford ? '#fff' : '#94a3b8') + ';">' + (canAfford ? '🎉 Einlösen!' : 'Zu wenig Sterne') + '</button>' +
           '</div>';
         }).join('');
       }
@@ -682,55 +664,40 @@
     function renderFloatingWidgets() {
       var container = document.getElementById('floating-timers-container');
       container.innerHTML = '';
-
-      var children = ['oskar', 'irma'];
-      var formatTime = function(sec) {
-        var m = Math.floor(sec / 60).toString();
-        if (m.length < 2) m = '0' + m;
-        var s = (sec % 60).toString();
-        if (s.length < 2) s = '0' + s;
-        return m + ':' + s;
-      };
-
-      children.forEach(function(ch) {
+      ['oskar', 'irma'].forEach(function(ch) {
         var t = activeTimers[ch];
         if (t && t.remainingSeconds > 0) {
           var progressPercent = ((t.totalSeconds - t.remainingSeconds) / t.totalSeconds) * 100;
           var remainingPercent = 100 - progressPercent;
-          
-          var barColor = 'bg-green-500';
-          if (remainingPercent < 50) barColor = 'bg-amber-400';
-          if (remainingPercent < 20) barColor = 'bg-red-500';
-
-          var widgetHtml = '<div onclick="openTimerForChild(\'' + ch + '\')" class="pointer-events-auto bg-slate-900 text-white p-3 rounded-2xl shadow-2xl border-2 ' + (ch === 'oskar' ? 'border-indigo-400' : 'border-pink-400') + ' cursor-pointer space-y-2">' +
-            '<div class="flex items-center justify-between text-xs">' +
-              '<div class="flex items-center space-x-2 font-bold font-heading">' +
-                '<span>' + (ch === 'oskar' ? '👦 Oskar' : '👧 Irma') + '</span>' +
-                '<span class="text-slate-400">• ' + t.icon + ' ' + t.title + '</span>' +
-              '</div>' +
-              '<span class="font-black text-amber-400 font-heading text-sm">' + formatTime(t.remainingSeconds) + '</span>' +
+          container.innerHTML += '<div onclick="openTimerForChild(\'' + ch + '\')" style="background:#0f172a; color:#fff; padding:0.75rem; border-radius:1rem; border:2px solid ' + (ch === 'oskar' ? '#818cf8' : '#f472b6') + '; cursor:pointer; box-shadow:0 10px 15px -3px rgba(0,0,0,0.3);">' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; font-weight:700;">' +
+              '<span>' + (ch === 'oskar' ? '👦 Oskar' : '👧 Irma') + ' • ' + t.title + '</span>' +
+              '<span style="color:#fbbf24; font-size:0.875rem;">' + Math.floor(t.remainingSeconds / 60) + ':' + (t.remainingSeconds % 60 < 10 ? '0' : '') + (t.remainingSeconds % 60) + '</span>' +
             '</div>' +
-            '<div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden"><div class="' + barColor + ' h-full transition-all duration-300" style="width: ' + remainingPercent + '%"></div></div>' +
+            '<div style="width:100%; background:#1e293b; height:0.5rem; border-radius:9999px; margin-top:0.5rem; overflow:hidden;">' +
+              '<div style="background:' + (remainingPercent < 20 ? '#dc2626' : (remainingPercent < 50 ? '#fbbf24' : '#22c55e')) + '; height:100%; width:' + remainingPercent + '%;"></div>' +
+            '</div>' +
           '</div>';
-          container.innerHTML += widgetHtml;
         }
       });
     }
 
     window.switchTab = function(tab) {
       if (tab === 'parent' && !isParentUnlocked) {
-        openParentModal();
+        document.getElementById('pin-input').value = '';
+        document.getElementById('pin-modal').classList.remove('hidden');
         return;
       }
-
       currentTab = tab;
       ['morgen', 'tag', 'abend', 'belohnungen'].forEach(function(t) {
         var btn = document.getElementById('tab-' + t);
         if (btn) {
           if (t === tab) {
-            btn.className = "px-5 py-3 rounded-2xl font-bold font-heading text-base transition flex items-center space-x-2 bg-indigo-600 text-white shadow-md";
+            btn.style.background = '#4f46e5';
+            btn.style.color = '#fff';
           } else {
-            btn.className = "px-5 py-3 rounded-2xl font-bold font-heading text-base transition flex items-center space-x-2 bg-white text-slate-600 hover:bg-slate-50 shadow-sm border border-slate-200";
+            btn.style.background = '#fff';
+            btn.style.color = '#475569';
           }
         }
       });
@@ -747,25 +714,7 @@
           childData.stars = (childData.stars || 0) + task.stars;
           playSound('success');
           confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
-          if (activeTimers[activeChild].itemId === id) cancelTimer(activeChild);
           saveStateToFirebase();
-        }
-      }
-    };
-
-    window.parentUnlockTask = function(child, taskId) {
-      if (!isParentUnlocked) return;
-      var childData = dbData[child];
-      var task = dbData.tasks.find(function(t) { return t.id === taskId; });
-
-      if (childData && task) {
-        if (!Array.isArray(childData.completedTasks)) childData.completedTasks = [];
-        var index = childData.completedTasks.indexOf(taskId);
-        if (index !== -1) {
-          childData.completedTasks.splice(index, 1);
-          childData.stars = Math.max(0, (childData.stars || 0) - task.stars);
-          saveStateToFirebase();
-          render();
         }
       }
     };
@@ -775,9 +724,8 @@
       var reward = dbData.rewards.find(function(r) { return r.id === id; });
       if (reward && childData && childData.stars >= reward.cost) {
         childData.stars -= reward.cost;
-        playSound('complete');
+        playSound('success');
         confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
-
         if (reward.minutes && reward.minutes > 0) {
           startTimer(activeChild, reward.minutes, reward.title, reward.icon, reward.id, false);
         } else {
@@ -787,13 +735,6 @@
     };
 
     window.startTimer = function(child, minutes, title, icon, itemId, allowEarly) {
-      if (itemId === undefined) itemId = null;
-      if (allowEarly === undefined) allowEarly = false;
-      var childData = dbData[child];
-      if (itemId && childData && (childData.completedTasks || []).indexOf(itemId) !== -1) {
-        return;
-      }
-
       var t = activeTimers[child];
       t.totalSeconds = minutes * 60;
       t.targetEndTime = Date.now() + (t.totalSeconds * 1000);
@@ -803,7 +744,6 @@
       t.itemId = itemId;
       t.allowEarly = allowEarly;
       t.isPaused = false;
-
       saveStateToFirebase();
       openTimerForChild(child);
       render();
@@ -813,26 +753,21 @@
       var needsRender = false;
       var stateChanged = false;
       var now = Date.now();
-
       ['oskar', 'irma'].forEach(function(ch) {
         var t = activeTimers[ch];
         if (t && t.targetEndTime && !t.isPaused) {
           var calcRemaining = Math.max(0, Math.round((t.targetEndTime - now) / 1000));
-          
           if (t.remainingSeconds !== calcRemaining) {
             t.remainingSeconds = calcRemaining;
             needsRender = true;
           }
-
           if (modalTimerChild === ch) {
-            updateModalTimerDisplay(ch);
+            var m = Math.floor(t.remainingSeconds / 60);
+            var s = t.remainingSeconds % 60;
+            document.getElementById('timer-display').innerText = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
           }
-
           if (t.remainingSeconds <= 0) {
             t.targetEndTime = null;
-            playSound('complete');
-            confetti({ particleCount: 120, spread: 100 });
-            
             if (t.itemId) {
               var childData = dbData[ch];
               var task = dbData.tasks.find(function(tk) { return tk.id === t.itemId; });
@@ -845,141 +780,43 @@
               }
             }
             stateChanged = true;
-            if (modalTimerChild === ch) {
-              showSuccessScreen(1, false);
-            }
           }
         }
       });
-
-      if (stateChanged) {
-        saveStateToFirebase();
-      } else if (needsRender) {
-        render();
-      }
+      if (stateChanged) saveStateToFirebase();
+      else if (needsRender) render();
     }
 
     window.openTimerForChild = function(child) {
       modalTimerChild = child;
       var t = activeTimers[child];
-
       document.getElementById('timer-child-badge').innerText = child === 'oskar' ? '👦 Oskar' : '👧 Irma';
       document.getElementById('timer-title').innerText = t.title;
-
-      var earlyBtn = document.getElementById('timer-early-btn');
-      if (t.allowEarly) {
-        earlyBtn.classList.remove('hidden');
-      } else {
-        earlyBtn.classList.add('hidden');
-      }
-
       document.getElementById('timer-running-view').classList.remove('hidden');
       document.getElementById('timer-success-view').classList.add('hidden');
       document.getElementById('timer-modal').classList.remove('hidden');
-
-      updateModalTimerDisplay(child);
     };
-
-    function updateModalTimerDisplay(child) {
-      var t = activeTimers[child];
-      if (!t) return;
-      var m = Math.floor(t.remainingSeconds / 60).toString();
-      if (m.length < 2) m = '0' + m;
-      var s = (t.remainingSeconds % 60).toString();
-      if (s.length < 2) s = '0' + s;
-      
-      document.getElementById('timer-display').innerText = m + ':' + s;
-      document.getElementById('timer-pause-btn').innerText = t.isPaused ? 'Weiter' : 'Pause';
-
-      var circle = document.getElementById('timer-circle');
-      var circumference = 502;
-      var offset = circumference - (t.remainingSeconds / t.totalSeconds) * circumference;
-      circle.style.strokeDashoffset = offset;
-    }
 
     window.completeTimerEarly = function(child) {
       if (!child) child = modalTimerChild;
       var t = activeTimers[child];
       if (!t || !t.itemId) return;
-
       var childData = dbData[child];
       var task = dbData.tasks.find(function(tk) { return tk.id === t.itemId; });
-
       if (task && childData) {
         if (!Array.isArray(childData.completedTasks)) childData.completedTasks = [];
-        if (childData.completedTasks.indexOf(t.itemId) === -1) {
-          childData.completedTasks.push(t.itemId);
-        }
-        
-        var isSuperFast = t.remainingSeconds >= (t.totalSeconds / 2);
-        var earnedStars = task.stars + (isSuperFast ? 1 : 0);
-
-        childData.stars = (childData.stars || 0) + earnedStars;
-        playSound('success');
-
-        confetti({ particleCount: isSuperFast ? 130 : 80, spread: 90, origin: { y: 0.5 } });
-
-        if (modalTimerChild === child) {
-          showSuccessScreen(earnedStars, isSuperFast);
-        } else {
-          cancelTimer(child);
-        }
-      } else {
-        cancelTimer(child);
+        if (childData.completedTasks.indexOf(t.itemId) === -1) childData.completedTasks.push(t.itemId);
+        childData.stars = (childData.stars || 0) + task.stars + 1;
+        confetti({ particleCount: 100, spread: 80 });
       }
-    };
-
-    function showSuccessScreen(earnedStars, isSuperFast) {
-      document.getElementById('timer-running-view').classList.add('hidden');
-      document.getElementById('timer-success-view').classList.remove('hidden');
-
-      document.getElementById('success-headline').innerText = isSuperFast ? "MEGA SCHNELL!" : "Klasse gemacht!";
-      document.getElementById('success-subline').innerText = '+' + earnedStars + ' ' + (earnedStars === 1 ? 'STERN' : 'STERNE') + ' ERHALTEN! ⭐';
-
-      var bonusBadge = document.getElementById('bonus-badge');
-      if (isSuperFast) {
-        bonusBadge.classList.remove('hidden');
-      } else {
-        bonusBadge.classList.add('hidden');
-      }
-    }
-
-    window.closeSuccessScreen = function() {
-      document.getElementById('timer-success-view').classList.add('hidden');
-      document.getElementById('timer-running-view').classList.remove('hidden');
-      if (modalTimerChild) cancelTimer(modalTimerChild);
-    };
-
-    window.toggleTimerPause = function() {
-      if (modalTimerChild) {
-        var t = activeTimers[modalTimerChild];
-        t.isPaused = !t.isPaused;
-        if (t.isPaused) {
-          t.targetEndTime = null;
-        } else {
-          t.targetEndTime = Date.now() + (t.remainingSeconds * 1000);
-        }
-        saveStateToFirebase();
-        updateModalTimerDisplay(modalTimerChild);
-      }
-    };
-
-    window.cancelCurrentTimer = function() {
-      if (modalTimerChild) cancelTimer(modalTimerChild);
-    };
-
-    function cancelTimer(child) {
-      var t = activeTimers[child];
       t.remainingSeconds = 0;
       t.targetEndTime = null;
       t.itemId = null;
       saveStateToFirebase();
-      if (modalTimerChild === child) {
-        document.getElementById('timer-modal').classList.add('hidden');
-        modalTimerChild = null;
-      }
+      document.getElementById('timer-modal').classList.add('hidden');
+      modalTimerChild = null;
       render();
-    }
+    };
 
     window.minimizeTimer = function() {
       document.getElementById('timer-modal').classList.add('hidden');
@@ -987,41 +824,28 @@
     };
 
     window.handleTimerBackdropClick = function(event) {
-      if (event.target.id === 'timer-modal') {
-        minimizeTimer();
-      }
+      if (event.target.id === 'timer-modal') minimizeTimer();
     };
 
     window.handleParentButtonClick = function() {
       if (isParentUnlocked) {
-        if (currentTab === 'parent') {
-          switchTab('morgen');
-        } else {
-          switchTab('parent');
-        }
+        switchTab(currentTab === 'parent' ? 'morgen' : 'parent');
       } else {
-        openParentModal();
+        document.getElementById('pin-input').value = '';
+        document.getElementById('pin-modal').classList.remove('hidden');
       }
     };
-
-    function openParentModal() {
-      document.getElementById('pin-input').value = '';
-      document.getElementById('pin-modal').classList.remove('hidden');
-    }
 
     window.closePinModal = function() {
       document.getElementById('pin-modal').classList.add('hidden');
     };
 
     window.verifyPin = function() {
-      var input = document.getElementById('pin-input').value;
-      if (input === PARENT_PIN) {
+      if (document.getElementById('pin-input').value === PARENT_PIN) {
         isParentUnlocked = true;
         closePinModal();
-        
         document.getElementById('parent-lock-icon').className = "fa-solid fa-lock-open text-indigo-600";
         document.getElementById('parent-btn-text').innerText = "Eltern (Aktiv)";
-        
         switchTab('parent');
       } else {
         alert('Falscher PIN! Versuche 1234');
@@ -1035,107 +859,36 @@
       switchTab('morgen');
     };
 
-    window.selectIcon = function(emoji, target) {
-      if (target === 'task') {
-        document.getElementById('new-task-icon').value = emoji;
-      } else {
-        document.getElementById('new-reward-icon').value = emoji;
-      }
+    window.closeSuccessScreen = function() {
+      document.getElementById('timer-success-view').classList.add('hidden');
+      document.getElementById('timer-running-view').classList.remove('hidden');
+      document.getElementById('timer-modal').classList.add('hidden');
+      modalTimerChild = null;
     };
 
-    window.addTask = function() {
-      var title = document.getElementById('new-task-title').value.trim();
-      var child = document.getElementById('new-task-child').value;
-      var category = document.getElementById('new-task-category').value;
-      var stars = parseInt(document.getElementById('new-task-stars').value, 10) || 1;
-      var minutes = parseInt(document.getElementById('new-task-minutes').value, 10) || 0;
-      var icon = document.getElementById('new-task-icon').value || '⭐';
-      var allowEarly = document.getElementById('new-task-allow-early').checked;
-
-      if (title) {
-        if (!Array.isArray(dbData.tasks)) dbData.tasks = [];
-        dbData.tasks.push({
-          id: Date.now().toString(),
-          child: child,
-          title: title,
-          category: category,
-          stars: stars,
-          minutes: minutes,
-          icon: icon,
-          allowEarly: allowEarly
-        });
-        document.getElementById('new-task-title').value = '';
+    window.toggleTimerPause = function() {
+      if (modalTimerChild) {
+        var t = activeTimers[modalTimerChild];
+        t.isPaused = !t.isPaused;
+        t.targetEndTime = t.isPaused ? null : Date.now() + (t.remainingSeconds * 1000);
         saveStateToFirebase();
       }
     };
 
-    window.addReward = function() {
-      var title = document.getElementById('new-reward-title').value.trim();
-      var child = document.getElementById('new-reward-child').value;
-      var cost = parseInt(document.getElementById('new-reward-cost').value, 10) || 1;
-      var minutes = parseInt(document.getElementById('new-reward-minutes').value, 10) || 0;
-      var icon = document.getElementById('new-reward-icon').value || '🎁';
-
-      if (title) {
-        if (!Array.isArray(dbData.rewards)) dbData.rewards = [];
-        dbData.rewards.push({
-          id: Date.now().toString(),
-          child: child,
-          title: title,
-          cost: cost,
-          minutes: minutes,
-          icon: icon
-        });
-        document.getElementById('new-reward-title').value = '';
+    window.cancelCurrentTimer = function() {
+      if (modalTimerChild) {
+        var t = activeTimers[modalTimerChild];
+        t.remainingSeconds = 0;
+        t.targetEndTime = null;
+        t.itemId = null;
         saveStateToFirebase();
+        document.getElementById('timer-modal').classList.add('hidden');
+        modalTimerChild = null;
+        render();
       }
     };
 
-    window.deleteItem = function(type, id) {
-      if (type === 'task') {
-        dbData.tasks = (dbData.tasks || []).filter(function(t) { return t.id !== id; });
-      } else {
-        dbData.rewards = (dbData.rewards || []).filter(function(r) { return r.id !== id; });
-      }
-      saveStateToFirebase();
-    };
-
-    window.resetDailyTasks = function() {
-      if (!dbData.oskar) dbData.oskar = { stars: 0, completedTasks: [] };
-      if (!dbData.irma) dbData.irma = { stars: 0, completedTasks: [] };
-      dbData.oskar.completedTasks = [];
-      dbData.irma.completedTasks = [];
-      saveStateToFirebase();
-    };
-
-    window.resetToDefaults = function() {
-      if (confirm('Möchtest du alle Aufgaben und Belohnungen auf den Standard zurücksetzen? (Deine Punkte bleiben dabei erhalten!)')) {
-        var oskarType = dbData.oskar && dbData.oskar.profileType ? dbData.oskar.profileType : 'school';
-        var irmaType = dbData.irma && dbData.irma.profileType ? dbData.irma.profileType : 'kindergarten';
-
-        dbData.tasks = buildTasksList(oskarType, irmaType);
-        dbData.rewards = [].concat(defaultRewards);
-        saveStateToFirebase();
-      }
-    };
-
-    window.clearAllData = function() {
-      if (confirm('Achtung: Möchtest du wirklich alle Daten inklusive aller Punkte komplett löschen?')) {
-        dbData = {
-          lastResetDate: '',
-          tasks: buildTasksList('school', 'kindergarten'),
-          rewards: [].concat(defaultRewards),
-          oskar: { stars: 0, completedTasks: [], profileType: 'school' },
-          irma: { stars: 0, completedTasks: [], profileType: 'kindergarten' },
-          activeTimers: {
-            oskar: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false },
-            irma: { totalSeconds: 0, targetEndTime: null, remainingSeconds: 0, isPaused: false, title: '', icon: '', itemId: null, allowEarly: false }
-          }
-        };
-        activeTimers = dbData.activeTimers;
-        saveStateToFirebase();
-      }
-    };
+    setInterval(updateTimersTick, 1000);
   </script>
 </body>
 </html>
