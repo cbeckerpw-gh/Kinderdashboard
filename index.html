@@ -386,6 +386,7 @@
     var activeChild = 'oskar';
     var activeModalTimerId = null;
     var successCloseTimer = null;
+    var globalAudioContext = null;
 
     // Farbkonfiguration je Profil (Oskar = Blau/Indigo, Irma = Rosa/Pink)
     var childThemes = {
@@ -535,7 +536,23 @@
     window.addEventListener('DOMContentLoaded', function() {
       render();
       setInterval(updateTimersTick, 1000);
+
+      // Globaler Touch-/Klick-Listener zur einmaligen Entsperrung des Audio-Contexts auf alten iOS-Geräten
+      window.addEventListener('touchstart', initAudioContextOnce, { once: true });
+      window.addEventListener('click', initAudioContextOnce, { once: true });
     });
+
+    function initAudioContextOnce() {
+      try {
+        var AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!globalAudioContext) {
+          globalAudioContext = new AudioCtx();
+        }
+        if (globalAudioContext.state === 'suspended') {
+          globalAudioContext.resume();
+        }
+      } catch (e) {}
+    }
 
     window.switchChild = function(child) {
       activeChild = child;
@@ -583,7 +600,10 @@
     function playSound(type) {
       try {
         var AudioCtx = window.AudioContext || window.webkitAudioContext;
-        var ctx = new AudioCtx();
+        var ctx = globalAudioContext || new AudioCtx();
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
         var osc = ctx.createOscillator();
         var gain = ctx.createGain();
         osc.connect(gain);
