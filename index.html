@@ -374,8 +374,26 @@
     var PARENT_PIN = "1234";
     var isParentUnlocked = false;
     var activeChild = 'oskar';
-    var activeModalTimerId = null; // Speichert die ID des aktuell im Modal geöffneten Timers
+    var activeModalTimerId = null;
     var successCloseTimer = null;
+
+    // Farbkonfiguration je Profil (Oskar = Blau/Indigo, Irma = Rosa/Pink)
+    var childThemes = {
+      oskar: {
+        primary: '#4f46e5',
+        lightBg: '#eef2ff',
+        border: '#818cf8',
+        cardBorder: '#c7d2fe',
+        cardActiveBorder: '#6366f1'
+      },
+      irma: {
+        primary: '#ec4899',
+        lightBg: '#fce7f3',
+        border: '#f472b6',
+        cardBorder: '#fbcfe8',
+        cardActiveBorder: '#db2777'
+      }
+    };
 
     var firebaseConfig = {
       apiKey: "AIzaSyBKk4OuNeLd1kCademvgdX8ZelWHvHq_n8",
@@ -419,7 +437,7 @@
       rewards: [].concat(defaultRewards),
       oskar: { stars: 0, completedTasks: [], profileType: 'school' },
       irma: { stars: 0, completedTasks: [], profileType: 'kindergarten' },
-      activeTimers: [] // Array für beliebig viele parallele Timer
+      activeTimers: []
     };
 
     var activeTimers = dbData.activeTimers;
@@ -509,22 +527,29 @@
       activeChild = child;
       var btnOskar = document.getElementById('child-btn-oskar');
       var btnIrma = document.getElementById('child-btn-irma');
+      var theme = childThemes[child];
 
       if (child === 'oskar') {
-        btnOskar.style.background = '#4f46e5';
+        btnOskar.style.background = theme.primary;
         btnOskar.style.color = '#fff';
         btnOskar.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
         btnIrma.style.background = 'transparent';
         btnIrma.style.color = '#475569';
         btnIrma.style.boxShadow = 'none';
       } else {
-        btnIrma.style.background = '#ec4899';
+        btnIrma.style.background = theme.primary;
         btnIrma.style.color = '#fff';
         btnIrma.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
         btnOskar.style.background = 'transparent';
         btnOskar.style.color = '#475569';
         btnOskar.style.boxShadow = 'none';
       }
+
+      if (currentTab !== 'parent' && currentTab !== 'belohnungen') {
+        var activeTabBtn = document.getElementById('tab-' + currentTab);
+        if (activeTabBtn) activeTabBtn.style.background = theme.primary;
+      }
+
       render();
     };
 
@@ -727,6 +752,8 @@
       document.getElementById('view-rewards').classList.toggle('hidden', currentTab !== 'belohnungen');
       document.getElementById('view-parent').classList.toggle('hidden', currentTab !== 'parent');
 
+      var theme = childThemes[activeChild];
+
       var formatTime = function(sec) {
         var m = Math.floor(sec / 60).toString();
         if (m.length < 2) m = '0' + m;
@@ -743,7 +770,6 @@
         taskList.innerHTML = filteredTasks.length ? filteredTasks.map(function(task) {
           var isCompleted = (childData.completedTasks || []).indexOf(task.id) !== -1;
           
-          // Prüfen, ob für diese spezifische Aufgabe (für das aktive Kind) ein Timer läuft
           var taskTimer = (activeTimers || []).find(function(t) {
             return t.child === activeChild && t.itemId === task.id && t.remainingSeconds > 0;
           });
@@ -772,15 +798,19 @@
               actionButtonHtml = '<div style="width:100%; padding:0.75rem; background:#dcfce7; color:#15803d; font-weight:700; border-radius:1rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; border:1px solid #bbf7d0; font-family:\'Fredoka\',sans-serif;"><i class="fa-solid fa-check"></i><span>Erledigt für heute!</span></div>';
             }
           } else if (task.minutes) {
-            actionButtonHtml = '<button type="button" onclick="startTimer(\'' + activeChild + '\',' + task.minutes + ', \'' + task.title + '\', \'' + task.icon + '\', \'' + task.id + '\',' + canAllowEarly + ')" style="width:100%; padding:0.75rem; background:#4f46e5; color:#fff; font-weight:700; border-radius:1rem; border:none; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-family:\'Fredoka\',sans-serif;">Starten (' + task.minutes + ' Min)</button>';
+            actionButtonHtml = '<button type="button" onclick="startTimer(\'' + activeChild + '\',' + task.minutes + ', \'' + task.title + '\', \'' + task.icon + '\', \'' + task.id + '\',' + canAllowEarly + ')" style="width:100%; padding:0.75rem; background:' + theme.primary + '; color:#fff; font-weight:700; border-radius:1rem; border:none; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-family:\'Fredoka\',sans-serif;">Starten (' + task.minutes + ' Min)</button>';
           } else {
             actionButtonHtml = '<button type="button" onclick="toggleTask(\'' + task.id + '\')" style="width:100%; padding:0.75rem; background:#fbbf24; color:#1e293b; font-weight:700; border-radius:1rem; border:none; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-family:\'Fredoka\',sans-serif;">Erledigen!</button>';
           }
 
-          return '<div style="border-color: ' + (isTimerActive ? '#fbbf24' : (isCompleted ? '#bbf7d0' : '#f1f5f9')) + '; border-width: 2px; border-style: solid; border-radius: 1.5rem; padding: 1.25rem; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; position: relative;">' +
+          // Kantenfarbe der Karte dynamisch anpassen (Profilfarbe als Rahmen, bei aktivem Timer gelb gepulst)
+          var cardBorder = isTimerActive ? theme.cardActiveBorder : (isCompleted ? '#bbf7d0' : theme.cardBorder);
+          var cardBorderWidth = isTimerActive ? '2px' : '2px';
+
+          return '<div class="' + (isTimerActive ? 'active-card-pulse' : '') + '" style="border-color: ' + cardBorder + '; border-width: ' + cardBorderWidth + '; border-style: solid; border-radius: 1.5rem; padding: 1.25rem; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; position: relative;">' +
             '<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">' +
               '<div style="display:flex; align-items:center; gap:0.75rem;">' +
-                '<div style="width:3rem; height:3rem; background:#fffbeb; border-radius:1rem; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">' + task.icon + '</div>' +
+                '<div style="width:3rem; height:3rem; background:' + theme.lightBg + '; border-radius:1rem; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">' + task.icon + '</div>' +
                 '<div>' +
                   '<h3 style="font-weight:700; font-size:1rem; color:#1e293b; font-family:\'Fredoka\',sans-serif; ' + (isCompleted ? 'text-decoration:line-through; color:#94a3b8;' : '') + '">' + task.title + '</h3>' +
                   '<div style="display:flex; gap:0.5rem; font-size:0.75rem; margin-top:0.25rem; font-weight:600;">' +
@@ -800,10 +830,10 @@
         var filteredRewards = (dbData.rewards || []).filter(function(r) { return r.child === 'both' || r.child === activeChild; });
         rewardList.innerHTML = filteredRewards.map(function(reward) {
           var canAfford = childData.stars >= reward.cost;
-          return '<div style="background:#fff; border:2px solid #f1f5f9; border-radius:1.5rem; padding:1.25rem; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 1px 2px rgba(0,0,0,0.05);">' +
+          return '<div style="background:#fff; border:2px solid ' + theme.cardBorder + '; border-radius:1.5rem; padding:1.25rem; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 1px 2px rgba(0,0,0,0.05);">' +
             '<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">' +
               '<div style="display:flex; align-items:center; gap:0.75rem;">' +
-                '<div style="width:3rem; height:3rem; background:#fffbeb; border-radius:1rem; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">' + reward.icon + '</div>' +
+                '<div style="width:3rem; height:3rem; background:' + theme.lightBg + '; border-radius:1rem; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">' + reward.icon + '</div>' +
                 '<div>' +
                   '<h3 style="font-weight:700; font-size:1rem; color:#1e293b; font-family:\'Fredoka\',sans-serif;">' + reward.title + '</h3>' +
                   '<div style="display:flex; gap:0.5rem; font-size:0.75rem; margin-top:0.25rem; font-weight:600;">' +
@@ -828,7 +858,8 @@
         if (t && t.remainingSeconds > 0) {
           var progressPercent = ((t.totalSeconds - t.remainingSeconds) / t.totalSeconds) * 100;
           var remainingPercent = 100 - progressPercent;
-          container.innerHTML += '<div onclick="openTimerModalById(\'' + t.timerUniqueId + '\')" style="pointer-events: auto; background:#0f172a; color:#fff; padding:0.85rem 1.1rem; border-radius:1rem; border:2px solid ' + (t.child === 'oskar' ? '#818cf8' : '#f472b6') + '; cursor:pointer; box-shadow:0 15px 25px -5px rgba(0,0,0,0.4); width:100%;">' +
+          var theme = childThemes[t.child] || childThemes.oskar;
+          container.innerHTML += '<div onclick="openTimerModalById(\'' + t.timerUniqueId + '\')" style="pointer-events: auto; background:#0f172a; color:#fff; padding:0.85rem 1.1rem; border-radius:1rem; border:2px solid ' + theme.border + '; cursor:pointer; box-shadow:0 15px 25px -5px rgba(0,0,0,0.4); width:100%;">' +
             '<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; font-weight:700; font-family:\'Fredoka\',sans-serif;">' +
               '<span>' + (t.child === 'oskar' ? '👦 Oskar' : '👧 Irma') + ' • ' + t.title + '</span>' +
               '<span style="color:#fbbf24; font-size:0.95rem;">' + Math.floor(t.remainingSeconds / 60) + ':' + (t.remainingSeconds % 60 < 10 ? '0' : '') + (t.remainingSeconds % 60) + '</span>' +
@@ -850,11 +881,13 @@
         return;
       }
       currentTab = tab;
+      var theme = childThemes[activeChild];
+
       ['morgen', 'tag', 'abend', 'belohnungen', 'parent'].forEach(function(t) {
         var btn = document.getElementById('tab-' + t);
         if (btn) {
           if (t === tab) {
-            btn.style.background = '#4f46e5';
+            btn.style.background = (t === 'belohnungen' ? '#f59e0b' : theme.primary);
             btn.style.color = '#fff';
             btn.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.1)';
           } else {
@@ -970,7 +1003,6 @@
       });
 
       if (stateChanged) {
-        // Abgelaufene Timer aus der Liste entfernen
         activeTimers = activeTimers.filter(function(t) { return t.remainingSeconds > 0 && t.targetEndTime !== null; });
         saveStateToFirebase();
       } else if (needsRender) {
@@ -1037,7 +1069,6 @@
       var childName = t.child;
       var starsWon = task ? task.stars + 1 : 1;
 
-      // Timer aus aktiven Timern entfernen
       activeTimers = activeTimers.filter(function(tm) { return tm.timerUniqueId !== activeModalTimerId; });
       saveStateToFirebase();
       
