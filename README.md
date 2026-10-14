@@ -1,5 +1,3 @@
-# Kinderdashboard
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -81,6 +79,13 @@
     .active-card-pulse {
       animation: pulse-border 1.5s infinite;
     }
+    @keyframes pulse-warning {
+      0%, 100% { opacity: 1; transform: scale(1); border-color: #dc2626; }
+      50% { opacity: 0.5; transform: scale(1.02); border-color: #fca5a5; }
+    }
+    .timer-warning-blink {
+      animation: pulse-warning 0.8s infinite ease-in-out;
+    }
     @keyframes bounce-subtle {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-10px); }
@@ -94,7 +99,7 @@
 <body>
 
   <!-- Parallele Floating Widgets für alle laufenden Timer (Unten Rechts gestapelt) -->
-  <div id="floating-timers-container" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 99; display: flex; flex-direction: column; gap: 0.75rem; max-width: 20rem; width: 100%; pointer-events: none;"></div>
+  <div id="floating-timers-container" style="position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 99; display: flex; flex-direction: column; gap: 0.75rem; max-width: 22rem; width: 100%; pointer-events: none;"></div>
 
   <!-- Main Container -->
   <div class="space-y-6 w-full">
@@ -102,55 +107,57 @@
     <!-- Header & Statusbar -->
     <header class="flex flex-wrap items-center justify-between gap-4">
       
-      <!-- Profil-Umschalter (Oskar & Irma) -->
-      <div class="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200" style="background:#f1f5f9; padding:0.375rem; border-radius:1rem; border:1px solid #e2e8f0;">
-        <button type="button" onclick="switchChild('oskar')" id="child-btn-oskar" style="padding:0.5rem 1rem; border-radius:0.75rem; font-weight:700; font-family:'Fredoka',sans-serif; font-size:0.875rem; border:none; cursor:pointer; background:#4f46e5; color:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
-          <span>👦 Oskar</span>
+      <!-- Profil-Umschalter (Oskar & Irma - Extra groß & kindgerechte Touch-Flächen) -->
+      <div style="display:flex; align-items:center; gap:0.75rem; background:#f1f5f9; padding:0.625rem; border-radius:1.5rem; border:1px solid #e2e8f0;">
+        <button type="button" onclick="switchChild('oskar')" id="child-btn-oskar" style="padding:0.875rem 1.5rem; border-radius:1.2rem; font-weight:700; font-family:'Fredoka',sans-serif; font-size:1.1rem; border:none; cursor:pointer; background:#4f46e5; color:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.1); display:flex; align-items:center; gap:0.65rem; transition:all 0.2s;">
+          <span style="font-size:1.75rem;">👦</span>
+          <span>Oskar</span>
         </button>
-        <button type="button" onclick="switchChild('irma')" id="child-btn-irma" style="padding:0.5rem 1rem; border-radius:0.75rem; font-weight:700; font-family:'Fredoka',sans-serif; font-size:0.875rem; border:none; cursor:pointer; background:transparent; color:#475569;">
-          <span>👧 Irma</span>
+        <button type="button" onclick="switchChild('irma')" id="child-btn-irma" style="padding:0.875rem 1.5rem; border-radius:1.2rem; font-weight:700; font-family:'Fredoka',sans-serif; font-size:1.1rem; border:none; cursor:pointer; background:transparent; color:#475569; display:flex; align-items:center; gap:0.65rem; transition:all 0.2s;">
+          <span style="font-size:1.75rem;">👧</span>
+          <span>Irma</span>
         </button>
       </div>
 
       <div class="flex items-center space-x-3" style="display:flex; align-items:center; gap:0.75rem;">
         <!-- Sterne Zähler -->
-        <div style="background:#fffbeb; border:2px solid #fde68a; padding:0.5rem 1rem; border-radius:1rem; display:flex; align-items:center; gap:0.5rem;">
+        <div style="background:#fffbeb; border:2px solid #fde68a; padding:0.625rem 1.15rem; border-radius:1.2rem; display:flex; align-items:center; gap:0.5rem;">
           <span style="font-size:1.5rem;">⭐</span>
           <span id="star-count" style="font-size:1.5rem; font-weight:900; font-family:'Fredoka',sans-serif; color:#d97706;">0</span>
         </div>
 
         <!-- Eltern-Modus Button -->
-        <button type="button" id="parent-toggle-btn" onclick="handleParentButtonClick()" style="padding:0.625rem 1rem; background:#f1f5f9; color:#475569; border-radius:1rem; font-weight:600; font-size:0.875rem; border:1px solid #e2e8f0; cursor:pointer; display:flex; align-items:center; gap:0.5rem;">
+        <button type="button" id="parent-toggle-btn" onclick="handleParentButtonClick()" style="padding:0.875rem 1.15rem; background:#f1f5f9; color:#475569; border-radius:1.2rem; font-weight:600; font-size:0.95rem; border:1px solid #e2e8f0; cursor:pointer; display:flex; align-items:center; gap:0.5rem;">
           <i id="parent-lock-icon" class="fa-solid fa-lock" style="color:#94a3b8;"></i>
           <span id="parent-btn-text">Eltern</span>
         </button>
       </div>
     </header>
 
-    <!-- Modus Tabs (Morgen, Tag, Abend, Shop) -->
-    <nav class="flex flex-wrap gap-2 md:gap-3" style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-      <button type="button" onclick="switchTab('morgen')" id="tab-morgen" style="padding:0.75rem 1.25rem; border-radius:1rem; font-weight:700; font-family:'Fredoka',sans-serif; font-size:1rem; border:none; cursor:pointer; background:#4f46e5; color:#fff; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
+    <!-- Modus Tabs (Morgen, Tag, Abend, Shop) - Vergrößerte Touch-Flächen -->
+    <nav class="flex flex-wrap gap-2 md:gap-3" style="display:flex; gap:0.85rem; flex-wrap:wrap;">
+      <button type="button" onclick="switchTab('morgen')" id="tab-morgen" style="padding:0.875rem 1.5rem; border-radius:1.2rem; font-weight:700; font-family:'Fredoka',sans-serif; font-size:1.1rem; border:none; cursor:pointer; background:#4f46e5; color:#fff; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
         <span>🌅 Morgen</span>
       </button>
-      <button type="button" onclick="switchTab('tag')" id="tab-tag" style="padding:0.75rem 1.25rem; border-radius:1rem; font-weight:700; font-family:'Fredoka',sans-serif; font-size:1rem; border:1px solid #e2e8f0; cursor:pointer; background:#fff; color:#475569;">
+      <button type="button" onclick="switchTab('tag')" id="tab-tag" style="padding:0.875rem 1.5rem; border-radius:1.2rem; font-weight:700; font-family:'Fredoka',sans-serif; font-size:1.1rem; border:1px solid #e2e8f0; cursor:pointer; background:#fff; color:#475569;">
         <span>☀️ Tag</span>
       </button>
-      <button type="button" onclick="switchTab('abend')" id="tab-abend" style="padding:0.75rem 1.25rem; border-radius:1rem; font-weight:700; font-family:'Fredoka',sans-serif; font-size:1rem; border:1px solid #e2e8f0; cursor:pointer; background:#fff; color:#475569;">
+      <button type="button" onclick="switchTab('abend')" id="tab-abend" style="padding:0.875rem 1.5rem; border-radius:1.2rem; font-weight:700; font-family:'Fredoka',sans-serif; font-size:1.1rem; border:1px solid #e2e8f0; cursor:pointer; background:#fff; color:#475569;">
         <span>🌙 Abend</span>
       </button>
-      <button type="button" onclick="switchTab('belohnungen')" id="tab-belohnungen" style="padding:0.75rem 1.25rem; border-radius:1rem; font-weight:700; font-family:'Fredoka',sans-serif; font-size:1rem; border:1px solid #e2e8f0; cursor:pointer; background:#fff; color:#475569;">
+      <button type="button" onclick="switchTab('belohnungen')" id="tab-belohnungen" style="padding:0.875rem 1.5rem; border-radius:1.2rem; font-weight:700; font-family:'Fredoka',sans-serif; font-size:1.1rem; border:1px solid #e2e8f0; cursor:pointer; background:#fff; color:#475569;">
         <span>🎁 Belohnungen & Shop</span>
       </button>
     </nav>
 
     <!-- Aufgabenbereich -->
     <section id="view-tasks" class="space-y-4">
-      <div id="task-list" class="grid grid-cols-1 md:grid-cols-2 gap-4" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:1rem;"></div>
+      <div id="task-list" class="grid grid-cols-1 md:grid-cols-2 gap-4" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:1.25rem;"></div>
     </section>
 
     <!-- Belohnungs-Shop -->
     <section id="view-rewards" class="hidden space-y-4">
-      <div id="reward-list" class="grid grid-cols-1 md:grid-cols-2 gap-4" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:1rem;"></div>
+      <div id="reward-list" class="grid grid-cols-1 md:grid-cols-2 gap-4" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:1.25rem;"></div>
     </section>
 
     <!-- Elternbereich Dashboard -->
@@ -162,7 +169,7 @@
         </div>
         <div style="display:flex; align-items:center; gap:0.5rem;">
           <span style="font-size:0.75rem; background:#eef2ff; color:#4f46e5; padding:0.25rem 0.75rem; border-radius:9999px; font-weight:700;">Bearbeitungsmodus</span>
-          <button type="button" onclick="lockParentMode()" style="padding:0.375rem 0.75rem; background:#f1f5f9; color:#334155; font-size:0.75rem; font-weight:700; border-radius:0.75rem; border:1px solid #e2e8f0; cursor:pointer;">
+          <button type="button" onclick="lockParentMode()" style="padding:0.5rem 1rem; background:#f1f5f9; color:#334155; font-size:0.85rem; font-weight:700; border-radius:0.75rem; border:1px solid #e2e8f0; cursor:pointer;">
             <i class="fa-solid fa-lock"></i> Sperren
           </button>
         </div>
@@ -315,55 +322,56 @@
 
   <!-- Fullscreen Timer Modal -->
   <div id="timer-modal" onclick="handleTimerBackdropClick(event)" style="position:fixed; top:0; right:0; bottom:0; left:0; background: rgba(15,23,42,0.7); display:none; align-items:center; justify-content:center; z-index:50;">
-    <div style="background:#fff; border-radius:1.5rem; padding:1.5rem; max-width:24rem; width:100%; text-align:center; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); position:relative;">
+    <div style="background:#fff; border-radius:1.75rem; padding:2rem; max-width:26rem; width:100%; text-align:center; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); position:relative;">
       
-      <!-- Timer Header -->
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:0.75rem; margin-bottom:1.5rem;">
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-          <span id="timer-child-badge" style="font-size:0.75rem; background:#eef2ff; color:#4f46e5; font-weight:700; padding:0.25rem 0.625rem; border-radius:0.5rem;">👦 Oskar</span>
-          <span id="timer-title" style="font-weight:700; font-family:'Fredoka',sans-serif; color:#1e293b; font-size:1rem;">Timer</span>
+      <!-- Timer Header mit großem kindgerechten Profil-Banner -->
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:0.85rem; margin-bottom:1.5rem;">
+        <div id="timer-child-banner" style="display:flex; align-items:center; gap:0.65rem; background:#eef2ff; color:#4f46e5; font-weight:700; font-family:'Fredoka',sans-serif; padding:0.625rem 1.15rem; border-radius:1.2rem; font-size:1.2rem;">
+          <span id="timer-child-emoji" style="font-size:1.75rem;">👦</span>
+          <span id="timer-child-name">Oskar</span>
         </div>
-        <button type="button" onclick="minimizeTimer()" style="background:transparent; border:none; color:#94a3b8; cursor:pointer; padding:0.5rem; font-size:1.25rem;" title="Minimieren">
+        <button type="button" onclick="minimizeTimer()" style="background:transparent; border:none; color:#94a3b8; cursor:pointer; padding:0.75rem; font-size:1.35rem;" title="Minimieren">
           <i class="fa-solid fa-window-minimize"></i>
         </button>
       </div>
 
       <!-- TIMER ZUSTAND -->
-      <div id="timer-running-view" style="display:flex; flex-direction:column; gap:1.5rem;">
-        <div style="position:relative; width:12rem; height:12rem; margin:0 auto; display:flex; align-items:center; justify-content:center;">
+      <div id="timer-running-view" style="display:flex; flex-direction:column; gap:1.75rem;">
+        <div style="font-weight:700; font-family:'Fredoka',sans-serif; color:#1e293b; font-size:1.25rem;" id="timer-title">Timer</div>
+        <div id="timer-ring-container" style="position:relative; width:13rem; height:13rem; margin:0 auto; display:flex; align-items:center; justify-content:center;">
           <svg style="width:100%; height:100%;" viewBox="0 0 192 192">
             <circle cx="96" cy="96" r="80" stroke="#f1f5f9" stroke-width="16" fill="none" />
             <circle id="timer-circle" class="timer-ring-circle" cx="96" cy="96" r="80" stroke="#6366f1" stroke-width="16" fill="none" stroke-dasharray="502" stroke-dashoffset="0" stroke-linecap="round" />
           </svg>
-          <div id="timer-display" style="position:absolute; font-size:2.25rem; font-weight:900; font-family:'Fredoka',sans-serif; color:#1e293b;">
+          <div id="timer-display" style="position:absolute; font-size:2.5rem; font-weight:900; font-family:'Fredoka',sans-serif; color:#1e293b;">
             00:00
           </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:0.5rem;">
-          <button type="button" id="timer-early-btn" onclick="completeTimerEarly()" style="width:100%; padding:0.875rem; background:#22c55e; color:#fff; font-weight:700; font-family:'Fredoka',sans-serif; border-radius:1rem; border:none; cursor:pointer; font-size:1.125rem;">
+        <div style="display:flex; flex-direction:column; gap:0.75rem;">
+          <button type="button" id="timer-early-btn" onclick="completeTimerEarly()" style="width:100%; padding:1.15rem; background:#22c55e; color:#fff; font-weight:700; font-family:'Fredoka',sans-serif; border-radius:1.2rem; border:none; cursor:pointer; font-size:1.2rem; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
             ✨ Fertig!
           </button>
           
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
-            <button type="button" onclick="toggleTimerPause()" id="timer-pause-btn" style="padding:0.625rem; background:#4f46e5; color:#fff; font-weight:700; font-family:'Fredoka',sans-serif; border-radius:1rem; border:none; cursor:pointer; font-size:0.875rem;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <button type="button" onclick="toggleTimerPause()" id="timer-pause-btn" style="padding:0.875rem; background:#4f46e5; color:#fff; font-weight:700; font-family:'Fredoka',sans-serif; border-radius:1.2rem; border:none; cursor:pointer; font-size:1rem;">
               Pause
             </button>
-            <button type="button" onclick="cancelCurrentTimer()" style="padding:0.625rem; background:#f1f5f9; color:#475569; font-weight:700; font-family:'Fredoka',sans-serif; border-radius:1rem; border:none; cursor:pointer; font-size:0.875rem;">
+            <button type="button" onclick="cancelCurrentTimer()" style="padding:0.875rem; background:#f1f5f9; color:#475569; font-weight:700; font-family:'Fredoka',sans-serif; border-radius:1.2rem; border:none; cursor:pointer; font-size:1rem;">
               Abbrechen
             </button>
           </div>
         </div>
       </div>
 
-      <!-- ERFOLGS-BILDCHIRM -->
-      <div id="timer-success-view" class="hidden" style="display:flex; flex-direction:column; gap:1.25rem; padding:0.5rem 0;">
-        <div style="font-size:3.75rem;" class="bounce-hero" id="success-icon">🏆</div>
-        <div style="display:flex; flex-direction:column; gap:0.25rem;">
-          <h3 id="success-headline" style="font-size:1.5rem; font-weight:900; font-family:'Fredoka',sans-serif; color:#1e293b;">SUPER GEMACHT!</h3>
-          <p id="success-subline" style="color:#d97706; font-weight:700; font-size:1.125rem; font-family:'Fredoka',sans-serif;">+1 STERN ERHALTEN! ⭐</p>
+      <!-- ERFOLGS- / ENDE-BILDSCHIRM -->
+      <div id="timer-success-view" class="hidden" style="display:flex; flex-direction:column; gap:1.5rem; padding:0.5rem 0;">
+        <div style="font-size:4rem;" class="bounce-hero" id="success-icon">🏆</div>
+        <div style="display:flex; flex-direction:column; gap:0.35rem;">
+          <h3 id="success-headline" style="font-size:1.75rem; font-weight:900; font-family:'Fredoka',sans-serif; color:#1e293b;">ZEIT UM!</h3>
+          <p id="success-subline" style="color:#d97706; font-weight:700; font-size:1.2rem; font-family:'Fredoka',sans-serif;">Super gemacht! 🎉</p>
         </div>
-        <button type="button" onclick="closeSuccessScreen()" style="width:100%; padding:1rem; background:#fbbf24; color:#1e293b; font-weight:900; font-family:'Fredoka',sans-serif; border-radius:1rem; border:none; cursor:pointer; font-size:1.25rem; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
+        <button type="button" onclick="closeSuccessScreen()" style="width:100%; padding:1.15rem; background:#fbbf24; color:#1e293b; font-weight:900; font-family:'Fredoka',sans-serif; border-radius:1.2rem; border:none; cursor:pointer; font-size:1.25rem; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
           SUPER! 🎉
         </button>
       </div>
@@ -376,8 +384,31 @@
     var PARENT_PIN = "1234";
     var isParentUnlocked = false;
     var activeChild = 'oskar';
-    var activeModalTimerId = null; // Speichert die ID des aktuell im Modal geöffneten Timers
+    var activeModalTimerId = null;
     var successCloseTimer = null;
+    var globalAudioContext = null;
+
+    // Farbkonfiguration je Profil (Oskar = Blau/Indigo, Irma = Rosa/Pink)
+    var childThemes = {
+      oskar: {
+        primary: '#4f46e5',
+        lightBg: '#eef2ff',
+        border: '#818cf8',
+        cardBorder: '#c7d2fe',
+        cardActiveBorder: '#6366f1',
+        emoji: '👦',
+        name: 'Oskar'
+      },
+      irma: {
+        primary: '#ec4899',
+        lightBg: '#fce7f3',
+        border: '#f472b6',
+        cardBorder: '#fbcfe8',
+        cardActiveBorder: '#db2777',
+        emoji: '👧',
+        name: 'Irma'
+      }
+    };
 
     var firebaseConfig = {
       apiKey: "AIzaSyBKk4OuNeLd1kCademvgdX8ZelWHvHq_n8",
@@ -407,7 +438,7 @@
     ];
 
     var defaultRewards = [
-      { id: 'r2', child: 'both', title: '30 Min. mit Papa Lego spielen', cost: 5, minutes: 30, icon: '🧱' },
+      { id: 'r2', child: 'both', title: 'Mit Papa Lego spielen', cost: 5, minutes: 30, icon: '🧱' },
       { id: 'r3', child: 'both', title: 'Lieblingssnack auswählen', cost: 2, minutes: 0, icon: '🍎' },
       { id: 'r4', child: 'both', title: 'Extra Spielplatz-Besuch', cost: 5, minutes: 30, icon: '🛝' },
       { id: 'r5', child: 'both', title: 'Spieleabend aussuchen', cost: 4, minutes: 0, icon: '🎲' }
@@ -421,7 +452,7 @@
       rewards: [].concat(defaultRewards),
       oskar: { stars: 0, completedTasks: [], profileType: 'school' },
       irma: { stars: 0, completedTasks: [], profileType: 'kindergarten' },
-      activeTimers: [] // Array für beliebig viele parallele Timer
+      activeTimers: []
     };
 
     var activeTimers = dbData.activeTimers;
@@ -505,28 +536,51 @@
     window.addEventListener('DOMContentLoaded', function() {
       render();
       setInterval(updateTimersTick, 1000);
+
+      // Globaler Touch-/Klick-Listener zur einmaligen Entsperrung des Audio-Contexts auf alten iOS-Geräten
+      window.addEventListener('touchstart', initAudioContextOnce, { once: true });
+      window.addEventListener('click', initAudioContextOnce, { once: true });
     });
+
+    function initAudioContextOnce() {
+      try {
+        var AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!globalAudioContext) {
+          globalAudioContext = new AudioCtx();
+        }
+        if (globalAudioContext.state === 'suspended') {
+          globalAudioContext.resume();
+        }
+      } catch (e) {}
+    }
 
     window.switchChild = function(child) {
       activeChild = child;
       var btnOskar = document.getElementById('child-btn-oskar');
       var btnIrma = document.getElementById('child-btn-irma');
+      var theme = childThemes[child];
 
       if (child === 'oskar') {
-        btnOskar.style.background = '#4f46e5';
+        btnOskar.style.background = theme.primary;
         btnOskar.style.color = '#fff';
-        btnOskar.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+        btnOskar.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
         btnIrma.style.background = 'transparent';
         btnIrma.style.color = '#475569';
         btnIrma.style.boxShadow = 'none';
       } else {
-        btnIrma.style.background = '#ec4899';
+        btnIrma.style.background = theme.primary;
         btnIrma.style.color = '#fff';
-        btnIrma.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+        btnIrma.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
         btnOskar.style.background = 'transparent';
         btnOskar.style.color = '#475569';
         btnOskar.style.boxShadow = 'none';
       }
+
+      if (currentTab !== 'parent' && currentTab !== 'belohnungen') {
+        var activeTabBtn = document.getElementById('tab-' + currentTab);
+        if (activeTabBtn) activeTabBtn.style.background = theme.primary;
+      }
+
       render();
     };
 
@@ -546,7 +600,10 @@
     function playSound(type) {
       try {
         var AudioCtx = window.AudioContext || window.webkitAudioContext;
-        var ctx = new AudioCtx();
+        var ctx = globalAudioContext || new AudioCtx();
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
         var osc = ctx.createOscillator();
         var gain = ctx.createGain();
         osc.connect(gain);
@@ -555,6 +612,12 @@
           osc.frequency.setValueAtTime(523.25, ctx.currentTime);
           osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3);
           gain.gain.setValueAtTime(0.3, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+          osc.start(); osc.stop(ctx.currentTime + 0.3);
+        } else if (type === 'warning') {
+          osc.frequency.setValueAtTime(440, ctx.currentTime);
+          osc.frequency.setValueAtTime(587.33, ctx.currentTime + 0.15);
+          gain.gain.setValueAtTime(0.2, ctx.currentTime);
           gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
           osc.start(); osc.stop(ctx.currentTime + 0.3);
         }
@@ -729,6 +792,8 @@
       document.getElementById('view-rewards').classList.toggle('hidden', currentTab !== 'belohnungen');
       document.getElementById('view-parent').classList.toggle('hidden', currentTab !== 'parent');
 
+      var theme = childThemes[activeChild];
+
       var formatTime = function(sec) {
         var m = Math.floor(sec / 60).toString();
         if (m.length < 2) m = '0' + m;
@@ -745,7 +810,6 @@
         taskList.innerHTML = filteredTasks.length ? filteredTasks.map(function(task) {
           var isCompleted = (childData.completedTasks || []).indexOf(task.id) !== -1;
           
-          // Prüfen, ob für diese spezifische Aufgabe (für das aktive Kind) ein Timer läuft
           var taskTimer = (activeTimers || []).find(function(t) {
             return t.child === activeChild && t.itemId === task.id && t.remainingSeconds > 0;
           });
@@ -759,39 +823,42 @@
           var actionButtonHtml = '';
           if (isTimerActive) {
             actionButtonHtml = '<div style="display:flex; flex-direction:column; gap:0.75rem;">' +
-              '<div style="width:100%; background:#f1f5f9; height:0.75rem; border-radius:9999px; overflow:hidden; border:1px solid #e2e8f0;">' +
+              '<div style="width:100%; background:#f1f5f9; height:0.85rem; border-radius:9999px; overflow:hidden; border:1px solid #e2e8f0;">' +
                 '<div style="background:' + (remainingPercent < 20 ? '#dc2626' : (remainingPercent < 50 ? '#fbbf24' : '#22c55e')) + '; height:100%; width:' + remainingPercent + '%;"></div>' +
               '</div>' +
-              '<div style="display:flex; gap:0.5rem;">' +
-                '<button type="button" onclick="openTimerModalById(\'' + taskTimer.timerUniqueId + '\')" style="flex:1; padding:0.75rem; background:#0f172a; color:#fbbf24; font-weight:900; border-radius:1rem; border:none; cursor:pointer; font-family:\'Fredoka\',sans-serif;">⏱️ ' + formatTime(taskTimer.remainingSeconds) + '</button>' +
-                (canAllowEarly ? '<button type="button" onclick="completeTimerEarlyById(\'' + taskTimer.timerUniqueId + '\')" style="padding:0.75rem 1.25rem; background:#22c55e; color:#fff; font-weight:700; border-radius:1rem; border:none; cursor:pointer; font-family:\'Fredoka\',sans-serif;">Fertig! 🎉</button>' : '') +
+              '<div style="display:flex; gap:0.65rem;">' +
+                '<button type="button" onclick="openTimerModalById(\'' + taskTimer.timerUniqueId + '\')" style="flex:1; padding:0.875rem; background:#0f172a; color:#fbbf24; font-weight:900; border-radius:1.2rem; border:none; cursor:pointer; font-family:\'Fredoka\',sans-serif; font-size:1.05rem;">⏱️ ' + formatTime(taskTimer.remainingSeconds) + '</button>' +
+                (canAllowEarly ? '<button type="button" onclick="completeTimerEarlyById(\'' + taskTimer.timerUniqueId + '\')" style="padding:0.875rem 1.25rem; background:#22c55e; color:#fff; font-weight:700; border-radius:1.2rem; border:none; cursor:pointer; font-family:\'Fredoka\',sans-serif; font-size:1.05rem;">Fertig! 🎉</button>' : '') +
               '</div>' +
             '</div>';
           } else if (isCompleted) {
             if (isParentUnlocked) {
-              actionButtonHtml = '<button type="button" onclick="uncompleteTask(\'' + task.id + '\')" style="width:100%; padding:0.75rem; background:#fef2f2; color:#dc2626; font-weight:700; border-radius:1rem; border:1px solid #fecaca; cursor:pointer; font-family:\'Fredoka\',sans-serif;">↩️ Aufgabe zurücksetzen (Stern abziehen)</button>';
+              actionButtonHtml = '<button type="button" onclick="uncompleteTask(\'' + task.id + '\')" style="width:100%; padding:0.875rem; background:#fef2f2; color:#dc2626; font-weight:700; border-radius:1.2rem; border:1px solid #fecaca; cursor:pointer; font-family:\'Fredoka\',sans-serif;">↩️ Aufgabe zurücksetzen (Stern abziehen)</button>';
             } else {
-              actionButtonHtml = '<div style="width:100%; padding:0.75rem; background:#dcfce7; color:#15803d; font-weight:700; border-radius:1rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; border:1px solid #bbf7d0; font-family:\'Fredoka\',sans-serif;"><i class="fa-solid fa-check"></i><span>Erledigt für heute!</span></div>';
+              actionButtonHtml = '<div style="width:100%; padding:0.875rem; background:#dcfce7; color:#15803d; font-weight:700; border-radius:1.2rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; border:1px solid #bbf7d0; font-family:\'Fredoka\',sans-serif; font-size:1.05rem;"><i class="fa-solid fa-check"></i><span>Erledigt für heute!</span></div>';
             }
           } else if (task.minutes) {
-            actionButtonHtml = '<button type="button" onclick="startTimer(\'' + activeChild + '\',' + task.minutes + ', \'' + task.title + '\', \'' + task.icon + '\', \'' + task.id + '\',' + canAllowEarly + ')" style="width:100%; padding:0.75rem; background:#4f46e5; color:#fff; font-weight:700; border-radius:1rem; border:none; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-family:\'Fredoka\',sans-serif;">Starten (' + task.minutes + ' Min)</button>';
+            actionButtonHtml = '<button type="button" onclick="startTimer(\'' + activeChild + '\',' + task.minutes + ', \'' + task.title + '\', \'' + task.icon + '\', \'' + task.id + '\',' + canAllowEarly + ')" style="width:100%; padding:0.95rem; background:' + theme.primary + '; color:#fff; font-weight:700; border-radius:1.2rem; border:none; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-family:\'Fredoka\',sans-serif; font-size:1.1rem;">Starten (' + task.minutes + ' Min)</button>';
           } else {
-            actionButtonHtml = '<button type="button" onclick="toggleTask(\'' + task.id + '\')" style="width:100%; padding:0.75rem; background:#fbbf24; color:#1e293b; font-weight:700; border-radius:1rem; border:none; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-family:\'Fredoka\',sans-serif;">Erledigen!</button>';
+            actionButtonHtml = '<button type="button" onclick="toggleTask(\'' + task.id + '\')" style="width:100%; padding:0.95rem; background:#fbbf24; color:#1e293b; font-weight:700; border-radius:1.2rem; border:none; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-family:\'Fredoka\',sans-serif; font-size:1.1rem;">Erledigen! ⭐</button>';
           }
 
-          return '<div style="border-color: ' + (isTimerActive ? '#fbbf24' : (isCompleted ? '#bbf7d0' : '#f1f5f9')) + '; border-width: 2px; border-style: solid; border-radius: 1.5rem; padding: 1.25rem; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; position: relative;">' +
-            '<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">' +
-              '<div style="display:flex; align-items:center; gap:0.75rem;">' +
-                '<div style="width:3rem; height:3rem; background:#fffbeb; border-radius:1rem; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">' + task.icon + '</div>' +
+          var cardBorder = isTimerActive ? theme.cardActiveBorder : (isCompleted ? '#bbf7d0' : theme.cardBorder);
+          var cardBorderWidth = isTimerActive ? '2px' : '2px';
+
+          return '<div class="' + (isTimerActive ? 'active-card-pulse' : '') + '" style="border-color: ' + cardBorder + '; border-width: ' + cardBorderWidth + '; border-style: solid; border-radius: 1.75rem; padding: 1.5rem; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; position: relative;">' +
+            '<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.25rem;">' +
+              '<div style="display:flex; align-items:center; gap:0.85rem;">' +
+                '<div style="width:3.5rem; height:3.5rem; background:' + theme.lightBg + '; border-radius:1.2rem; display:flex; align-items:center; justify-content:center; font-size:1.75rem;">' + task.icon + '</div>' +
                 '<div>' +
-                  '<h3 style="font-weight:700; font-size:1rem; color:#1e293b; font-family:\'Fredoka\',sans-serif; ' + (isCompleted ? 'text-decoration:line-through; color:#94a3b8;' : '') + '">' + task.title + '</h3>' +
-                  '<div style="display:flex; gap:0.5rem; font-size:0.75rem; margin-top:0.25rem; font-weight:600;">' +
-                    '<span style="background:#fef3c7; color:#92400e; padding:0.125rem 0.5rem; border-radius:0.5rem;">⭐ ' + task.stars + ' ' + (task.stars === 1 ? 'Stern' : 'Sterne') + '</span>' +
+                  '<h3 style="font-weight:700; font-size:1.1rem; color:#1e293b; font-family:\'Fredoka\',sans-serif; ' + (isCompleted ? 'text-decoration:line-through; color:#94a3b8;' : '') + '">' + task.title + '</h3>' +
+                  '<div style="display:flex; gap:0.6rem; font-size:0.85rem; margin-top:0.35rem; font-weight:600;">' +
+                    '<span style="background:#fef3c7; color:#92400e; padding:0.2rem 0.6rem; border-radius:0.6rem;">⭐ ' + task.stars + ' ' + (task.stars === 1 ? 'Stern' : 'Sterne') + '</span>' +
                     (task.minutes ? '<span style="color:#94a3b8;">⏱️ ' + task.minutes + ' Min</span>' : '') +
                   '</div>' +
                 '</div>' +
               '</div>' +
-              (isParentUnlocked ? '<button type="button" onclick="deleteItem(\'task\', \'' + task.id + '\')" style="background:transparent; border:none; color:#cbd5e1; cursor:pointer; font-size:1rem;" title="Löschen"><i class="fa-solid fa-trash-can"></i></button>' : '') +
+              (isParentUnlocked ? '<button type="button" onclick="deleteItem(\'task\', \'' + task.id + '\')" style="background:transparent; border:none; color:#cbd5e1; cursor:pointer; font-size:1.1rem; padding:0.5rem;" title="Löschen"><i class="fa-solid fa-trash-can"></i></button>' : '') +
             '</div>' +
             '<div>' + actionButtonHtml + '</div>' +
           '</div>';
@@ -802,20 +869,21 @@
         var filteredRewards = (dbData.rewards || []).filter(function(r) { return r.child === 'both' || r.child === activeChild; });
         rewardList.innerHTML = filteredRewards.map(function(reward) {
           var canAfford = childData.stars >= reward.cost;
-          return '<div style="background:#fff; border:2px solid #f1f5f9; border-radius:1.5rem; padding:1.25rem; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 1px 2px rgba(0,0,0,0.05);">' +
-            '<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">' +
-              '<div style="display:flex; align-items:center; gap:0.75rem;">' +
-                '<div style="width:3rem; height:3rem; background:#fffbeb; border-radius:1rem; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">' + reward.icon + '</div>' +
+          return '<div style="background:#fff; border:2px solid ' + theme.cardBorder + '; border-radius:1.75rem; padding:1.5rem; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 1px 2px rgba(0,0,0,0.05);">' +
+            '<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.25rem;">' +
+              '<div style="display:flex; align-items:center; gap:0.85rem;">' +
+                '<div style="width:3.5rem; height:3.5rem; background:' + theme.lightBg + '; border-radius:1.2rem; display:flex; align-items:center; justify-content:center; font-size:1.75rem;">' + reward.icon + '</div>' +
                 '<div>' +
-                  '<h3 style="font-weight:700; font-size:1rem; color:#1e293b; font-family:\'Fredoka\',sans-serif;">' + reward.title + '</h3>' +
-                  '<div style="display:flex; gap:0.5rem; font-size:0.75rem; margin-top:0.25rem; font-weight:600;">' +
-                    '<span style="background:#fef3c7; color:#92400e; padding:0.125rem 0.5rem; border-radius:0.5rem;">⭐ ' + reward.cost + ' Sterne</span>' +
+                  '<h3 style="font-weight:700; font-size:1.1rem; color:#1e293b; font-family:\'Fredoka\',sans-serif;">' + reward.title + '</h3>' +
+                  '<div style="display:flex; gap:0.6rem; font-size:0.85rem; margin-top:0.35rem; font-weight:600;">' +
+                    '<span style="background:#fef3c7; color:#92400e; padding:0.2rem 0.6rem; border-radius:0.6rem;">⭐ ' + reward.cost + ' Sterne</span>' +
+                    (reward.minutes ? '<span style="color:#94a3b8;">⏱️ ' + reward.minutes + ' Min</span>' : '') +
                   '</div>' +
                 '</div>' +
               '</div>' +
-              (isParentUnlocked ? '<button type="button" onclick="deleteItem(\'reward\', \'' + reward.id + '\')" style="background:transparent; border:none; color:#cbd5e1; cursor:pointer; font-size:1rem;"><i class="fa-solid fa-trash-can"></i></button>' : '') +
+              (isParentUnlocked ? '<button type="button" onclick="deleteItem(\'reward\', \'' + reward.id + '\')" style="background:transparent; border:none; color:#cbd5e1; cursor:pointer; font-size:1.1rem; padding:0.5rem;"><i class="fa-solid fa-trash-can"></i></button>' : '') +
             '</div>' +
-            '<button type="button" onclick="claimReward(\'' + reward.id + '\')" ' + (!canAfford ? 'disabled' : '') + ' style="width:100%; padding:0.75rem; border-radius:1rem; font-weight:700; font-family:\'Fredoka\',sans-serif; border:none; cursor:' + (canAfford ? 'pointer' : 'not-allowed') + '; background:' + (canAfford ? '#f59e0b' : '#f1f5f9') + '; color:' + (canAfford ? '#fff' : '#94a3b8') + '; box-shadow:0 1px 2px rgba(0,0,0,0.05);">' + (canAfford ? '🎉 Einlösen!' : 'Zu wenig Sterne') + '</button>' +
+            '<button type="button" onclick="claimReward(\'' + reward.id + '\')" ' + (!canAfford ? 'disabled' : '') + ' style="width:100%; padding:0.95rem; border-radius:1.2rem; font-weight:700; font-family:\'Fredoka\',sans-serif; border:none; cursor:' + (canAfford ? 'pointer' : 'not-allowed') + '; background:' + (canAfford ? '#f59e0b' : '#f1f5f9') + '; color:' + (canAfford ? '#fff' : '#94a3b8') + '; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-size:1.1rem;">' + (canAfford ? '🎉 Einlösen!' : 'Zu wenig Sterne') + '</button>' +
           '</div>';
         }).join('');
       }
@@ -826,16 +894,24 @@
     function renderFloatingWidgets() {
       var container = document.getElementById('floating-timers-container');
       container.innerHTML = '';
+      var themeOskar = childThemes.oskar;
+
       (activeTimers || []).forEach(function(t) {
         if (t && t.remainingSeconds > 0) {
           var progressPercent = ((t.totalSeconds - t.remainingSeconds) / t.totalSeconds) * 100;
           var remainingPercent = 100 - progressPercent;
-          container.innerHTML += '<div onclick="openTimerModalById(\'' + t.timerUniqueId + '\')" style="pointer-events: auto; background:#0f172a; color:#fff; padding:0.85rem 1.1rem; border-radius:1rem; border:2px solid ' + (t.child === 'oskar' ? '#818cf8' : '#f472b6') + '; cursor:pointer; box-shadow:0 15px 25px -5px rgba(0,0,0,0.4); width:100%;">' +
-            '<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; font-weight:700; font-family:\'Fredoka\',sans-serif;">' +
-              '<span>' + (t.child === 'oskar' ? '👦 Oskar' : '👧 Irma') + ' • ' + t.title + '</span>' +
-              '<span style="color:#fbbf24; font-size:0.95rem;">' + Math.floor(t.remainingSeconds / 60) + ':' + (t.remainingSeconds % 60 < 10 ? '0' : '') + (t.remainingSeconds % 60) + '</span>' +
+          var theme = childThemes[t.child] || themeOskar;
+          
+          var isBlinking = t.remainingSeconds <= 60;
+          var widgetBorderStyle = isBlinking ? '2px solid #dc2626' : ('2px solid ' + theme.border);
+          var widgetClass = isBlinking ? 'timer-warning-blink' : '';
+
+          container.innerHTML += '<div onclick="openTimerModalById(\'' + t.timerUniqueId + '\')" class="' + widgetClass + '" style="pointer-events: auto; background:#0f172a; color:#fff; padding:1rem 1.25rem; border-radius:1.2rem; border:' + widgetBorderStyle + '; cursor:pointer; box-shadow:0 15px 25px -5px rgba(0,0,0,0.4); width:100%;">' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.9rem; font-weight:700; font-family:\'Fredoka\',sans-serif;">' +
+              '<span>' + theme.emoji + ' ' + theme.name + ' • ' + t.title + '</span>' +
+              '<span style="color:' + (isBlinking ? '#fca5a5' : '#fbbf24') + '; font-size:1.05rem;">' + Math.floor(t.remainingSeconds / 60) + ':' + (t.remainingSeconds % 60 < 10 ? '0' : '') + (t.remainingSeconds % 60) + '</span>' +
             '</div>' +
-            '<div style="width:100%; background:#1e293b; height:0.5rem; border-radius:9999px; margin-top:0.5rem; overflow:hidden;">' +
+            '<div style="width:100%; background:#1e293b; height:0.6rem; border-radius:9999px; margin-top:0.65rem; overflow:hidden;">' +
               '<div style="background:' + (remainingPercent < 20 ? '#dc2626' : (remainingPercent < 50 ? '#fbbf24' : '#22c55e')) + '; height:100%; width:' + remainingPercent + '%;"></div>' +
             '</div>' +
           '</div>';
@@ -852,11 +928,13 @@
         return;
       }
       currentTab = tab;
+      var theme = childThemes[activeChild];
+
       ['morgen', 'tag', 'abend', 'belohnungen', 'parent'].forEach(function(t) {
         var btn = document.getElementById('tab-' + t);
         if (btn) {
           if (t === tab) {
-            btn.style.background = '#4f46e5';
+            btn.style.background = (t === 'belohnungen' ? '#f59e0b' : theme.primary);
             btn.style.color = '#fff';
             btn.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.1)';
           } else {
@@ -892,14 +970,14 @@
         playSound('success');
         confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
         if (reward.minutes && reward.minutes > 0) {
-          startTimer(activeChild, reward.minutes, reward.title, reward.icon, reward.id, false);
+          startTimer(activeChild, reward.minutes, reward.title, reward.icon, reward.id, false, true);
         } else {
           saveStateToFirebase();
         }
       }
     };
 
-    window.startTimer = function(child, minutes, title, icon, itemId, allowEarly) {
+    window.startTimer = function(child, minutes, title, icon, itemId, allowEarly, isReward) {
       if (!Array.isArray(activeTimers)) activeTimers = [];
       var timerUniqueId = 'timer_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
       var totalSec = minutes * 60;
@@ -914,7 +992,11 @@
         remainingSeconds: totalSec,
         targetEndTime: Date.now() + (totalSec * 1000),
         isPaused: false,
-        allowEarly: allowEarly
+        allowEarly: allowEarly,
+        isReward: !!isReward,
+        warned300: false, // 5 Min
+        warned60: false,  // 1 Min
+        warned10: false   // 10 Sek
       };
 
       activeTimers.push(newTimer);
@@ -937,6 +1019,20 @@
             t.remainingSeconds = calcRemaining;
             needsRender = true;
           }
+
+          // Akustische Warnungen bei 5 Min (300s), 1 Min (60s) und 10 Sek (10s)
+          if (t.totalSeconds >= 300 && t.remainingSeconds === 300 && !t.warned300) {
+            t.warned300 = true;
+            playSound('warning');
+          }
+          if (t.remainingSeconds === 60 && !t.warned60) {
+            t.warned60 = true;
+            playSound('warning');
+          }
+          if (t.remainingSeconds === 10 && !t.warned10) {
+            t.warned10 = true;
+            playSound('warning');
+          }
           
           if (activeModalTimerId === t.timerUniqueId) {
             var m = Math.floor(t.remainingSeconds / 60);
@@ -944,16 +1040,26 @@
             document.getElementById('timer-display').innerText = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
             
             var circle = document.getElementById('timer-circle');
+            var ringContainer = document.getElementById('timer-ring-container');
             if (circle && t.totalSeconds > 0) {
               var progress = t.remainingSeconds / t.totalSeconds;
               var dashOffset = 502.6 * (1 - progress);
               circle.style.strokeDashoffset = dashOffset;
+              if (t.remainingSeconds <= 60) {
+                circle.setAttribute('stroke', '#dc2626');
+                if (ringContainer) ringContainer.classList.add('timer-warning-blink');
+              } else {
+                circle.setAttribute('stroke', '#6366f1');
+                if (ringContainer) ringContainer.classList.remove('timer-warning-blink');
+              }
             }
           }
 
           if (t.remainingSeconds <= 0) {
             t.targetEndTime = null;
-            if (t.itemId) {
+            if (t.isReward) {
+              showRewardEndScreen(t.child, t.title);
+            } else if (t.itemId) {
               var childData = dbData[t.child];
               var task = dbData.tasks.find(function(tk) { return tk.id === t.itemId; });
               if (task && childData) {
@@ -972,7 +1078,6 @@
       });
 
       if (stateChanged) {
-        // Abgelaufene Timer aus der Liste entfernen
         activeTimers = activeTimers.filter(function(t) { return t.remainingSeconds > 0 && t.targetEndTime !== null; });
         saveStateToFirebase();
       } else if (needsRender) {
@@ -985,35 +1090,82 @@
       if (!t) return;
 
       activeModalTimerId = timerUniqueId;
-      document.getElementById('timer-child-badge').innerText = t.child === 'oskar' ? '👦 Oskar' : '👧 Irma';
+      var theme = childThemes[t.child] || childThemes.oskar;
+      
+      var banner = document.getElementById('timer-child-banner');
+      banner.style.background = theme.lightBg;
+      banner.style.color = theme.primary;
+      document.getElementById('timer-child-emoji').innerText = theme.emoji;
+      document.getElementById('timer-child-name').innerText = theme.name;
+
       document.getElementById('timer-title').innerText = t.title;
       document.getElementById('timer-running-view').classList.remove('hidden');
       document.getElementById('timer-success-view').classList.add('hidden');
       
       var earlyBtn = document.getElementById('timer-early-btn');
       if (earlyBtn) {
-        earlyBtn.style.display = t.allowEarly !== false ? 'block' : 'none';
+        earlyBtn.style.display = (t.allowEarly !== false && !t.isReward) ? 'block' : 'none';
       }
 
       var circle = document.getElementById('timer-circle');
+      var ringContainer = document.getElementById('timer-ring-container');
       if (circle && t.totalSeconds > 0) {
         var progress = t.remainingSeconds / t.totalSeconds;
         var dashOffset = 502.6 * (1 - progress);
         circle.style.strokeDashoffset = dashOffset;
+        if (t.remainingSeconds <= 60) {
+          circle.setAttribute('stroke', '#dc2626');
+          if (ringContainer) ringContainer.classList.add('timer-warning-blink');
+        } else {
+          circle.setAttribute('stroke', '#6366f1');
+          if (ringContainer) ringContainer.classList.remove('timer-warning-blink');
+        }
       }
 
       document.getElementById('timer-modal').style.display = 'flex';
     };
 
     window.showSuccessScreen = function(child, title, starsEarned) {
-      document.getElementById('timer-child-badge').innerText = child === 'oskar' ? '👦 Oskar' : '👧 Irma';
+      var theme = childThemes[child] || childThemes.oskar;
+      var banner = document.getElementById('timer-child-banner');
+      banner.style.background = theme.lightBg;
+      banner.style.color = theme.primary;
+      document.getElementById('timer-child-emoji').innerText = theme.emoji;
+      document.getElementById('timer-child-name').innerText = theme.name;
+
       document.getElementById('timer-title').innerText = title;
+      document.getElementById('success-headline').innerText = "SUPER GEMACHT!";
+      document.getElementById('success-subline').innerText = "+" + starsEarned + " STERN" + (starsEarned > 1 ? "E" : "") + " ERHALTEN! ⭐";
       document.getElementById('timer-running-view').classList.add('hidden');
       document.getElementById('timer-success-view').classList.remove('hidden');
       document.getElementById('timer-modal').style.display = 'flex';
 
       playSound('success');
       confetti({ particleCount: 100, spread: 80 });
+
+      if (successCloseTimer) clearTimeout(successCloseTimer);
+      successCloseTimer = setTimeout(function() {
+        closeSuccessScreen();
+      }, 10000);
+    };
+
+    window.showRewardEndScreen = function(child, title) {
+      var theme = childThemes[child] || childThemes.oskar;
+      var banner = document.getElementById('timer-child-banner');
+      banner.style.background = theme.lightBg;
+      banner.style.color = theme.primary;
+      document.getElementById('timer-child-emoji').innerText = theme.emoji;
+      document.getElementById('timer-child-name').innerText = theme.name;
+
+      document.getElementById('timer-title').innerText = title;
+      document.getElementById('success-headline').innerText = "ZEIT UM!";
+      document.getElementById('success-subline').innerText = "Die Belohnungszeit ist vorbei! ⏰";
+      document.getElementById('timer-running-view').classList.add('hidden');
+      document.getElementById('timer-success-view').classList.remove('hidden');
+      document.getElementById('timer-modal').style.display = 'flex';
+
+      playSound('success');
+      confetti({ particleCount: 80, spread: 60 });
 
       if (successCloseTimer) clearTimeout(successCloseTimer);
       successCloseTimer = setTimeout(function() {
@@ -1039,7 +1191,6 @@
       var childName = t.child;
       var starsWon = task ? task.stars + 1 : 1;
 
-      // Timer aus aktiven Timern entfernen
       activeTimers = activeTimers.filter(function(tm) { return tm.timerUniqueId !== activeModalTimerId; });
       saveStateToFirebase();
       
