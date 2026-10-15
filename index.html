@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
+  <!-- Apple PWA / Kiosk-Modus Meta-Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sterne & Routine">
+
   <title>Routine & Sterne - Oskar & Irma (iPad Legacy)</title>
   <link rel="icon" type="image/png" href="./favicon.png">
   
@@ -901,7 +907,6 @@
           var rewardButtonHtml = '';
           if (isTimerActive) {
             if (rewardTimer.isPaused) {
-              // Deutlicher Status-Button auf der Karte bei Pausierung
               rewardButtonHtml = '<button type="button" onclick="openTimerModalById(\'' + rewardTimer.timerUniqueId + '\')" style="width:100%; padding:0.95rem; border-radius:1.2rem; font-weight:700; font-family:\'Fredoka\',sans-serif; border:none; cursor:pointer; background:#f59e0b; color:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-size:1.1rem;">⏸️ Belohnung pausiert (' + formatTime(rewardTimer.remainingSeconds) + ')</button>';
             } else {
               rewardButtonHtml = '<button type="button" onclick="openTimerModalById(\'' + rewardTimer.timerUniqueId + '\')" style="width:100%; padding:0.95rem; border-radius:1.2rem; font-weight:700; font-family:\'Fredoka\',sans-serif; border:none; cursor:pointer; background:#0f172a; color:#fbbf24; box-shadow:0 1px 2px rgba(0,0,0,0.05); font-size:1.1rem;">⏱️ Belohnung läuft (' + formatTime(rewardTimer.remainingSeconds) + ')</button>';
